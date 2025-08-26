@@ -1,0 +1,52 @@
+version: "3.6"
+
+services:
+  license:
+    image: "totvsengpro/license-dev"
+    networks:
+      - protheus-network
+
+  postgres-iniciado:
+    image: "totvsengpro/postgres-dev:12.1.2210_bra"
+    environment:
+      - POSTGRES_DB=protheus
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - protheus-network
+
+  dbaccess-postgres:
+    image: "totvsengpro/dbaccess-postgres-dev"
+    volumes:
+      - "${PWD}/dbaccess.ini:/opt/totvs/dbaccess/multi/dbaccess.ini"
+    depends_on:
+      - postgres-iniciado
+      - license
+    networks:
+      - protheus-network
+
+  appserver:
+    image: "totvsengpro/appserver-dev"
+    volumes:
+      - "${PWD}/appserver.ini:/opt/totvs/appserver/appserver.ini"
+      - "${PWD}/tttm120.rpo:/opt/totvs/protheus/apo/tttm120.rpo"
+      - "${PWD}/sx2.unq:/opt/totvs/protheus/protheus_data/systemload/sx2.unq"
+      - "${PWD}/sxsbra.txt:/opt/totvs/protheus/protheus_data/systemload/sxsbra.txt"
+    ports:
+      - "1234:1234"
+      - "8080:8080"
+      - "8081:8081"
+    depends_on:
+      - dbaccess-postgres
+      - license
+    networks:
+      - protheus-network
+
+volumes:
+  postgres_data:
+
+networks:
+  protheus-network:
+    driver: bridge
