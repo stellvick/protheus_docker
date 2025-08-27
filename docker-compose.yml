@@ -30,10 +30,10 @@ services:
   appserver:
     image: "totvsengpro/appserver-dev"
     volumes:
-      - "${PWD}/appserver.ini:/opt/totvs/appserver/appserver.ini"
-      - "${PWD}/tttm120.rpo:/opt/totvs/protheus/apo/tttm120.rpo"
-      - "${PWD}/sx2.unq:/opt/totvs/protheus/protheus_data/systemload/sx2.unq"
-      - "${PWD}/sxsbra.txt:/opt/totvs/protheus/protheus_data/systemload/sxsbra.txt"
+      - ./appserver.ini:/opt/totvs/appserver/appserver.ini
+      - ./tttm120.rpo:/opt/totvs/protheus/apo/tttm120.rpo
+      - ./sx2.unq:/opt/totvs/protheus/protheus_data/systemload/sx2.unq
+      - ./sxsbra.txt:/opt/totvs/protheus/protheus_data/systemload/sxsbra.txt
     depends_on:
       - dbaccess-postgres
       - license
@@ -45,7 +45,7 @@ services:
       - "8081:8081"
       - "9090:9090"
     labels:
-      - caddy_0=https://protheus.stellvick.fun
+      - caddy_0=https://protheus.seudominio.com
       - caddy_0.reverse_proxy={{upstreams 8080}}
       - caddy_0.encode=zstd gzip
       - caddy_1.handle_path=/rest/*
