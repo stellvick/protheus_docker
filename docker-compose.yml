@@ -5,6 +5,10 @@ services:
     image: "totvsengpro/license-dev"
     networks:
       - protheus-network
+    labels:
+      - caddy_0=https://<subdomínio-license>.coolify.stellvick.fun
+      - caddy_0.reverse_proxy={{upstreams 5555}}
+      - caddy_0.encode=zstd gzip
 
   postgres-iniciado:
     image: "totvsengpro/postgres-dev:12.1.2210_bra"
@@ -45,8 +49,8 @@ services:
       - "8081:8081"
       - "9090:9090"
     labels:
-      # 🌐 WebApp (porta 8080)
-      - caddy_0=https://protheus.stellvick.fun
+      # 🌐 WebApp (porta 8080) via link do Coolify
+      - caddy_0=https://qc4cogco4sw8cs844ckoo44o.coolify.stellvick.fun
       - caddy_0.reverse_proxy={{upstreams 8080}}
       - caddy_0.encode=zstd gzip
 
