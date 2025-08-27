@@ -50,7 +50,7 @@ services:
       - "9090:9090"
     labels:
       # 🌐 WebApp (porta 8080) via link do Coolify
-      - caddy_0=https://qc4cogco4sw8cs844ckoo44o.coolify.stellvick.fun
+      - caddy_0=https://protheus.stellvick.fun
       - caddy_0.reverse_proxy={{upstreams 8080}}
       - caddy_0.encode=zstd gzip
 
