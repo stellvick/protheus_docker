@@ -34,16 +34,24 @@ services:
       - "${PWD}/tttm120.rpo:/opt/totvs/protheus/apo/tttm120.rpo"
       - "${PWD}/sx2.unq:/opt/totvs/protheus/protheus_data/systemload/sx2.unq"
       - "${PWD}/sxsbra.txt:/opt/totvs/protheus/protheus_data/systemload/sxsbra.txt"
-    ports:
-      - "1234:1234"
-      - "8080:8080"
-      - "8081:8081"
-      - "9090:9090"
     depends_on:
       - dbaccess-postgres
       - license
     networks:
       - protheus-network
+    ports:
+      - "1234:1234"
+      - "8080:8080"
+      - "8081:8081"
+      - "9090:9090"
+    labels:
+      - caddy_0=https://protheus.stellvick.fun
+      - caddy_0.reverse_proxy={{upstreams 8080}}
+      - caddy_0.encode=zstd gzip
+      - caddy_1.handle_path=/rest/*
+      - caddy_1.reverse_proxy={{upstreams 8081}}
+      - caddy_2.handle_path=/smart/*
+      - caddy_2.reverse_proxy={{upstreams 9090}}
 
 volumes:
   postgres_data:
