@@ -20,7 +20,7 @@ services:
   dbaccess-postgres:
     image: "totvsengpro/dbaccess-postgres-dev"
     volumes:
-      - "${PWD}/dbaccess.ini:/opt/totvs/dbaccess/multi/dbaccess.ini"
+      - ./dbaccess.ini:/opt/totvs/dbaccess/multi/dbaccess.ini
     depends_on:
       - postgres-iniciado
       - license
@@ -45,11 +45,16 @@ services:
       - "8081:8081"
       - "9090:9090"
     labels:
+      # 🌐 WebApp (porta 8080)
       - caddy_0=https://protheus.stellvick.fun
       - caddy_0.reverse_proxy={{upstreams 8080}}
       - caddy_0.encode=zstd gzip
+
+      # 📡 API REST (porta 8081)
       - caddy_1.handle_path=/rest/*
       - caddy_1.reverse_proxy={{upstreams 8081}}
+
+      # 💻 SmartClient Web (porta 9090)
       - caddy_2.handle_path=/smart/*
       - caddy_2.reverse_proxy={{upstreams 9090}}
 
