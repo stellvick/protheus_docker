@@ -45,7 +45,7 @@ services:
       - "8081:8081"
       - "9090:9090"
     labels:
-      - caddy_0=https://protheus.seudominio.com
+      - caddy_0=https://protheus.stellvick.fun
       - caddy_0.reverse_proxy={{upstreams 8080}}
       - caddy_0.encode=zstd gzip
       - caddy_1.handle_path=/rest/*
