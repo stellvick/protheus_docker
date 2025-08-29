@@ -1,0 +1,19 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+LICENSE
+
+# Docker
+docker-compose.yml
+Dockerfile
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
