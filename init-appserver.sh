@@ -20,16 +20,46 @@ fi
 
 echo "✓ Executável encontrado: $APPSERVER_EXEC"
 
-echo "=== VERIFICANDO PARÂMETROS DISPONÍVEIS ==="
-"$APPSERVER_EXEC" -help 2>&1 || echo "Help executado"
-
 echo "=== TESTANDO CONECTIVIDADE ==="
 timeout 5 bash -c "</dev/tcp/dbaccess-postgres/7890" 2>/dev/null && echo "✓ DBAccess acessível" || echo "❌ DBAccess inacessível"
 timeout 5 bash -c "</dev/tcp/license/5555" 2>/dev/null && echo "✓ License Server acessível" || echo "❌ License Server inacessível"
+
+echo "=== VERIFICANDO ARQUIVOS NECESSÁRIOS ==="
+echo "Verificando RPO:"
+ls -la /opt/totvs/protheus/apo/tttm120.rpo || echo "❌ RPO não encontrado"
+
+echo "Verificando dicionários:"
+ls -la /opt/totvs/protheus/protheus_data/systemload/sx2.unq || echo "❌ sx2.unq não encontrado"
+ls -la /opt/totvs/protheus/protheus_data/systemload/sxsbra.txt || echo "❌ sxsbra.txt não encontrado"
 
 echo "=== INICIANDO APPSERVER ==="
 echo "Mudando para diretório do AppServer..."
 cd /opt/totvs/appserver
 
-echo "Iniciando AppServer (sem parâmetros, deve usar appserver.ini local):"
-exec "$APPSERVER_EXEC"
+echo "Limpando logs anteriores..."
+rm -f console.log console_error.log
+
+echo "Iniciando AppServer:"
+"$APPSERVER_EXEC" 2>&1 | tee console_output.log &
+APPSERVER_PID=$!
+
+echo "AppServer iniciado com PID: $APPSERVER_PID"
+
+sleep 10
+
+if ps -p $APPSERVER_PID > /dev/null; then
+    echo "✓ AppServer ainda está rodando"
+    echo "Últimas linhas do log:"
+    tail -20 console_output.log 2>/dev/null || echo "Nenhum log encontrado"
+else
+    echo "❌ AppServer parou. Logs:"
+    cat console_output.log 2>/dev/null || echo "Nenhum log encontrado"
+    
+    echo "Verificando logs de erro:"
+    cat console.log 2>/dev/null || echo "Nenhum console.log"
+    cat console_error.log 2>/dev/null || echo "Nenhum console_error.log"
+    
+    exit 1
+fi
+
+wait $APPSERVER_PID
