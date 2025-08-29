@@ -118,7 +118,7 @@ docker-compose logs dbaccess-postgres
 
 ```bash
 # Reiniciar apenas o AppServer
-docker-compose restart appserver
+docker-compose restart appserver 
 
 # Reiniciar todos os serviços
 docker-compose restart
