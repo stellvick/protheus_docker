@@ -3,7 +3,7 @@
 # Script de inicialização do AppServer
 set -e
 
-echo "Iniciando AppServer..."
+echo "=== INICIANDO DEBUG DO APPSERVER ==="
 
 # Verifica se o arquivo de configuração existe
 if [ ! -f "/opt/totvs/appserver/appserver.ini" ]; then
@@ -11,8 +11,63 @@ if [ ! -f "/opt/totvs/appserver/appserver.ini" ]; then
     exit 1
 fi
 
-echo "Arquivo de configuração encontrado:"
-echo "$(head -n 3 /opt/totvs/appserver/appserver.ini)"
+echo "✓ Arquivo de configuração encontrado:"
+echo "$(head -n 5 /opt/totvs/appserver/appserver.ini)"
 
-echo "Iniciando AppServer com configuração..."
-exec /opt/totvs/appserver/appserver -console -config=/opt/totvs/appserver/appserver.ini
+# Lista estrutura de diretórios importantes
+echo "=== ESTRUTURA DE DIRETÓRIOS ==="
+echo "Conteúdo de /opt/totvs/:"
+ls -la /opt/totvs/ 2>/dev/null || echo "❌ Diretório /opt/totvs/ não existe"
+
+echo "Conteúdo de /opt/totvs/appserver/:"
+ls -la /opt/totvs/appserver/ 2>/dev/null || echo "❌ Diretório /opt/totvs/appserver/ não existe"
+
+# Procura pelo executável do AppServer
+echo "=== PROCURANDO EXECUTÁVEL ==="
+APPSERVER_EXEC=""
+POSSIBLE_PATHS=(
+    "/opt/totvs/appserver/appserver"
+    "/opt/totvs/bin/appserver"
+    "/usr/local/bin/appserver"
+    "/opt/totvs/appserver/bin/appserver"
+    "/totvs/appserver/appserver"
+    "/opt/totvs/12/bin/appserver/appserver"
+)
+
+for path in "${POSSIBLE_PATHS[@]}"; do
+    if [ -x "$path" ]; then
+        APPSERVER_EXEC="$path"
+        echo "✓ Executável encontrado: $APPSERVER_EXEC"
+        break
+    else
+        echo "❌ Não encontrado: $path"
+    fi
+done
+
+# Se não encontrou, faz busca ampla
+if [ -z "$APPSERVER_EXEC" ]; then
+    echo "⚠️  Executável não encontrado nos caminhos padrão!"
+    echo "Fazendo busca ampla por executáveis appserver:"
+    find /opt -name "*appserver*" -type f -executable 2>/dev/null | head -10
+    find /usr -name "*appserver*" -type f -executable 2>/dev/null | head -10
+    
+    # Verifica se existe algum executável na imagem base
+    echo "Verificando ENTRYPOINT/CMD da imagem:"
+    cat /proc/1/cmdline 2>/dev/null | tr '\0' ' ' || echo "Não foi possível verificar"
+    
+    exit 1
+fi
+
+echo "=== TESTANDO CONECTIVIDADE ==="
+# Testa conectividade com dependências
+echo "Testando conexão com dbaccess-postgres:7890..."
+nc -z dbaccess-postgres 7890 && echo "✓ DBAccess acessível" || echo "❌ DBAccess inacessível"
+
+echo "Testando conexão com license:5555..."
+nc -z license 5555 && echo "✓ License Server acessível" || echo "❌ License Server inacessível"
+
+echo "=== INICIANDO APPSERVER ==="
+echo "Comando: $APPSERVER_EXEC -console -config=/opt/totvs/appserver/appserver.ini"
+
+# Executa o AppServer com logs detalhados
+exec "$APPSERVER_EXEC" -console -config=/opt/totvs/appserver/appserver.ini
