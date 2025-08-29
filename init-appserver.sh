@@ -37,20 +37,36 @@ echo "Mudando para diretório do AppServer..."
 cd /opt/totvs/appserver
 
 echo "Limpando logs anteriores..."
-rm -f console.log console_error.log
+rm -f console.log console_error.log console_output.log
 
 echo "Iniciando AppServer:"
-"$APPSERVER_EXEC" 2>&1 | tee console_output.log &
+"$APPSERVER_EXEC" > console_output.log 2>&1 &
 APPSERVER_PID=$!
 
 echo "AppServer iniciado com PID: $APPSERVER_PID"
 
-sleep 10
+echo "Aguardando inicialização..."
+sleep 15
 
 if ps -p $APPSERVER_PID > /dev/null; then
     echo "✓ AppServer ainda está rodando"
+    
+    echo "=== TESTANDO PORTAS ==="
+    echo "Testando porta 8080 (WebApp):"
+    timeout 3 bash -c "</dev/tcp/localhost/8080" 2>/dev/null && echo "✓ Porta 8080 ativa" || echo "❌ Porta 8080 inativa"
+    
+    echo "Testando porta 8081 (REST):"
+    timeout 3 bash -c "</dev/tcp/localhost/8081" 2>/dev/null && echo "✓ Porta 8081 ativa" || echo "❌ Porta 8081 inativa"
+    
+    echo "Testando porta 9090 (SmartClient Web):"
+    timeout 3 bash -c "</dev/tcp/localhost/9090" 2>/dev/null && echo "✓ Porta 9090 ativa" || echo "❌ Porta 9090 inativa"
+    
     echo "Últimas linhas do log:"
     tail -20 console_output.log 2>/dev/null || echo "Nenhum log encontrado"
+    
+    echo "AppServer inicializado com sucesso! Mantendo em execução..."
+    tail -f console_output.log &
+    wait $APPSERVER_PID
 else
     echo "❌ AppServer parou. Logs:"
     cat console_output.log 2>/dev/null || echo "Nenhum log encontrado"
@@ -61,5 +77,3 @@ else
     
     exit 1
 fi
-
-wait $APPSERVER_PID
