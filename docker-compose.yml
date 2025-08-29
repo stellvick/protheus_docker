@@ -34,7 +34,8 @@ services:
   appserver:
     image: "totvsengpro/appserver-dev"
     volumes:
-      - ./appserver.ini:/opt/totvs/appserver/appserver.ini
+      - ./appserver.ini:/opt/totvs/appserver/config/appserver.ini:ro
+      - ./init-appserver.sh:/opt/totvs/scripts/init-appserver.sh:ro
       - ./tttm120.rpo:/opt/totvs/protheus/apo/tttm120.rpo
       - ./sx2.unq:/opt/totvs/protheus/protheus_data/systemload/sx2.unq
       - ./sxsbra.txt:/opt/totvs/protheus/protheus_data/systemload/sxsbra.txt
@@ -43,6 +44,7 @@ services:
       - license
     networks:
       - protheus-network
+    command: ["sh", "/opt/totvs/scripts/init-appserver.sh"]
     ports:
       - "1234:1234"
       - "8080:8080"
