@@ -1,11 +1,5 @@
 FROM totvsengpro/appserver-dev
 
-# Instala ferramentas de debug necessárias
-RUN apt-get update && apt-get install -y \
-    netcat-openbsd \
-    procps \
-    && rm -rf /var/lib/apt/lists/*
-
 # Cria os diretórios necessários se não existirem
 RUN mkdir -p /opt/totvs/appserver \
     && mkdir -p /opt/totvs/protheus/apo \

@@ -59,12 +59,12 @@ if [ -z "$APPSERVER_EXEC" ]; then
 fi
 
 echo "=== TESTANDO CONECTIVIDADE ==="
-# Testa conectividade com dependências
+# Testa conectividade com dependências usando timeout e /dev/tcp
 echo "Testando conexão com dbaccess-postgres:7890..."
-nc -z dbaccess-postgres 7890 && echo "✓ DBAccess acessível" || echo "❌ DBAccess inacessível"
+timeout 5 bash -c "</dev/tcp/dbaccess-postgres/7890" 2>/dev/null && echo "✓ DBAccess acessível" || echo "❌ DBAccess inacessível"
 
 echo "Testando conexão com license:5555..."
-nc -z license 5555 && echo "✓ License Server acessível" || echo "❌ License Server inacessível"
+timeout 5 bash -c "</dev/tcp/license/5555" 2>/dev/null && echo "✓ License Server acessível" || echo "❌ License Server inacessível"
 
 echo "=== INICIANDO APPSERVER ==="
 echo "Comando: $APPSERVER_EXEC -console -config=/opt/totvs/appserver/appserver.ini"
