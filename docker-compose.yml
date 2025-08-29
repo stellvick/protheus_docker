@@ -49,18 +49,18 @@ services:
       - "8081:8081"
       - "9090:9090"
     labels:
-      # 🌐 WebApp (porta 8080) via link do Coolify
+      # 🌐 WebApp principal (porta 8080)
       - caddy_0=https://n8o0g0c4s4oggk8ccogc008k.coolify.stellvick.fun
       - caddy_0.reverse_proxy={{upstreams 8080}}
       - caddy_0.encode=zstd gzip
 
-      # 📡 API REST (porta 8081)
-      - caddy_1.handle_path=/rest/*
-      - caddy_1.reverse_proxy={{upstreams 8081}}
+      # 📡 API REST (porta 8081) no mesmo domínio em /rest/*
+      - caddy_0.handle_path=/rest/*
+      - caddy_0.reverse_proxy={{upstreams 8081}}
 
-      # 💻 SmartClient Web (porta 9090)
-      - caddy_2.handle_path=/smart/*
-      - caddy_2.reverse_proxy={{upstreams 9090}}
+      # 💻 SmartClient Web (porta 9090) no mesmo domínio em /smart/*
+      - caddy_0.handle_path=/smart/*
+      - caddy_0.reverse_proxy={{upstreams 9090}}
 
 volumes:
   postgres_data:
