@@ -9,36 +9,27 @@ if [ ! -f "/opt/totvs/appserver/appserver.ini" ]; then
     exit 1
 fi
 
-echo "✓ Arquivo de configuração encontrado:"
-echo "$(head -n 5 /opt/totvs/appserver/appserver.ini)"
+echo "✓ Arquivo de configuração encontrado"
 
-echo "=== ESTRUTURA DE DIRETÓRIOS ==="
-echo "Conteúdo de /opt/totvs/:"
-ls -la /opt/totvs/ 2>/dev/null || echo "❌ Diretório /opt/totvs/ não existe"
-
-echo "Conteúdo de /opt/totvs/appserver/:"
-ls -la /opt/totvs/appserver/ 2>/dev/null || echo "❌ Diretório /opt/totvs/appserver/ não existe"
-
-echo "=== PROCURANDO EXECUTÁVEL ==="
 APPSERVER_EXEC="/opt/totvs/appserver/appsrvlinux"
 
-if [ -x "$APPSERVER_EXEC" ]; then
-    echo "✓ Executável encontrado: $APPSERVER_EXEC"
-else
-    echo "❌ Executável appsrvlinux não encontrado ou não executável"
-    echo "Verificando permissões:"
-    ls -la /opt/totvs/appserver/appsrvlinux 2>/dev/null || echo "Arquivo não existe"
+if [ ! -x "$APPSERVER_EXEC" ]; then
+    echo "❌ Executável appsrvlinux não encontrado"
     exit 1
 fi
 
-echo "=== TESTANDO CONECTIVIDADE ==="
-echo "Testando conexão com dbaccess-postgres:7890..."
-timeout 5 bash -c "</dev/tcp/dbaccess-postgres/7890" 2>/dev/null && echo "✓ DBAccess acessível" || echo "❌ DBAccess inacessível"
+echo "✓ Executável encontrado: $APPSERVER_EXEC"
 
-echo "Testando conexão com license:5555..."
+echo "=== VERIFICANDO PARÂMETROS DISPONÍVEIS ==="
+"$APPSERVER_EXEC" -help 2>&1 || echo "Help executado"
+
+echo "=== TESTANDO CONECTIVIDADE ==="
+timeout 5 bash -c "</dev/tcp/dbaccess-postgres/7890" 2>/dev/null && echo "✓ DBAccess acessível" || echo "❌ DBAccess inacessível"
 timeout 5 bash -c "</dev/tcp/license/5555" 2>/dev/null && echo "✓ License Server acessível" || echo "❌ License Server inacessível"
 
 echo "=== INICIANDO APPSERVER ==="
-echo "Comando: $APPSERVER_EXEC -config=/opt/totvs/appserver/appserver.ini"
+echo "Mudando para diretório do AppServer..."
+cd /opt/totvs/appserver
 
-exec "$APPSERVER_EXEC" -config=/opt/totvs/appserver/appserver.ini
+echo "Iniciando AppServer (sem parâmetros, deve usar appserver.ini local):"
+exec "$APPSERVER_EXEC"
