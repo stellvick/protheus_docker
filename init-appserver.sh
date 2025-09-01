@@ -61,8 +61,9 @@ if ps -p $APPSERVER_PID > /dev/null; then
     echo "Testando porta 9090 (SmartClient Web):"
     timeout 3 bash -c "</dev/tcp/localhost/9090" 2>/dev/null && echo "✓ Porta 9090 ativa" || echo "❌ Porta 9090 inativa"
     
-    echo "Últimas linhas do log:"
-    tail -20 console_output.log 2>/dev/null || echo "Nenhum log encontrado"
+    echo "=== LOG COMPLETO DO APPSERVER ==="
+    cat console_output.log 2>/dev/null || echo "Nenhum log encontrado"
+    echo "=== FIM DO LOG ==="
     
     echo "AppServer inicializado com sucesso! Mantendo em execução..."
     tail -f console_output.log &
