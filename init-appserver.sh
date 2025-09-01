@@ -44,6 +44,7 @@ echo "Iniciando AppServer:"
 APPSERVER_PID=$!
 
 echo "AppServer iniciado com PID: $APPSERVER_PID"
+sleep 15
 
 if ps -p $APPSERVER_PID > /dev/null; then
     wait $APPSERVER_PID
