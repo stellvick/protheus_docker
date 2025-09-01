@@ -56,9 +56,6 @@ services:
       - caddy_0.handle_path=/smart/*
       - caddy_0.reverse_proxy={{upstreams 9090}}
 
-      - caddy_0.handle_path=/
-      - caddy_0.reverse_proxy={{upstreams 1234}}
-
 volumes:
   postgres_data:
 
