@@ -11,7 +11,7 @@ services:
       - caddy_0.encode=zstd gzip
 
   postgres-iniciado:
-    image: "totvsengpro/postgres-dev:12.1.2210_bra"
+    image: "totvsengpro/postgres-dev:12.1.2410_bra"
     environment:
       - POSTGRES_DB=protheus
       - POSTGRES_USER=postgres
@@ -46,18 +46,18 @@ services:
       - "8081:8081"
       - "9090:9090"
     labels:
-      # 🌐 WebApp principal (porta 8080)
-      - caddy_0=https://n8o0g0c4s4oggk8ccogc008k.coolify.stellvick.fun
+      - caddy_0=https://protheus.coolify.stellvick.fun
       - caddy_0.reverse_proxy={{upstreams 8080}}
       - caddy_0.encode=zstd gzip
 
-      # 📡 API REST (porta 8081) no mesmo domínio em /rest/*
       - caddy_0.handle_path=/rest/*
       - caddy_0.reverse_proxy={{upstreams 8081}}
 
-      # 💻 SmartClient Web (porta 9090) no mesmo domínio em /smart/*
       - caddy_0.handle_path=/smart/*
       - caddy_0.reverse_proxy={{upstreams 9090}}
+
+      - caddy_0.handle_path=/
+      - caddy_0.reverse_proxy={{upstreams 1234}}
 
 volumes:
   postgres_data:
