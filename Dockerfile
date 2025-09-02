@@ -24,7 +24,7 @@ COPY *.txt /opt/totvs/protheus/protheus_data/systemload/
 COPY menus/ /opt/totvs/protheus/protheus_data/system/
 COPY help.ZIP /tmp/
 
-RUN cd /tmp && unzip help.ZIP && cp *.txt /opt/totvs/protheus/protheus_data/systemload/ \
+RUN cd /tmp && ls -la && unzip help.ZIP && cp *.txt /opt/totvs/protheus/protheus_data/systemload/ \
     && echo "Verificando arquivos copiados:" \
     && ls -la /opt/totvs/appserver/ \
     && ls -la /opt/totvs/protheus/apo/ \
