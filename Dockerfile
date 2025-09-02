@@ -8,7 +8,6 @@ RUN zypper refresh && zypper install -y \
     libcurl4 \
     libxml2 \
     libxslt \
-    postgresql \
     unixODBC \
     && mkdir -p /opt/totvs/appserver \
     && mkdir -p /opt/totvs/protheus/apo \
@@ -16,22 +15,21 @@ RUN zypper refresh && zypper install -y \
     && mkdir -p /opt/totvs/protheus/protheus_data/systemload
 
 COPY appserver.tar.GZ /tmp/
-
-RUN tar -xzf /tmp/appserver.tar.GZ -C /opt/totvs/appserver/ --strip-components=1
-
 COPY appserver.ini /opt/totvs/appserver/
 COPY *.rpo /opt/totvs/protheus/apo/
 COPY *.unq /opt/totvs/protheus/protheus_data/systemload/
 COPY *.txt /opt/totvs/protheus/protheus_data/systemload/
 COPY menus/ /opt/totvs/protheus/protheus_data/system/
-COPY help.ZIP /opt/totvs/protheus/protheus_data/systemload/
+COPY help.ZIP /tmp/
 
-# RUN cd /opt/totvs/protheus/protheus_data/systemload && unzip help.ZIP \
-RUN cd /opt/totvs/protheus/protheus_data/systemload \
+RUN unzip -v && ls -lh /tmp/help.ZIP
+
+RUN cd /tmp && unzip -o help.ZIP -d /tmp/help \
+    && cp /tmp/help/*.txt /opt/totvs/protheus/protheus_data/systemload/ \
     && echo "Verificando arquivos copiados:" \
     && ls -la /opt/totvs/appserver/ \
     && ls -la /opt/totvs/protheus/apo/ \
     && ls -la /opt/totvs/protheus/protheus_data/system/ \
     && ls -la /opt/totvs/protheus/protheus_data/systemload/
 
-CMD ["/opt/totvs/appserver/appsrvlinux"]
+# CMD ["/opt/totvs/appserver/appsrvlinux"]
