@@ -1,14 +1,14 @@
-FROM registry.redhat.io/ubi9/ubi:latest
+FROM opensuse/leap:15.4
 
-RUN dnf update -y && dnf install -y \
+RUN zypper refresh && zypper install -y \
     unzip \
     tar \
     gzip \
-    openssl-libs \
-    libcurl \
+    openssl \
+    libcurl4 \
     libxml2 \
     libxslt \
-    postgresql-libs \
+    postgresql \
     unixODBC \
     && mkdir -p /opt/totvs/appserver \
     && mkdir -p /opt/totvs/protheus/apo \
