@@ -1,4 +1,4 @@
-FROM registry.redhat.io/ubi9/ubi:9.4
+FROM redhat/ubi9:latest-source
 
 RUN dnf update -y && dnf install -y \
     unzip \
