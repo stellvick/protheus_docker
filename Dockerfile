@@ -1,23 +1,21 @@
-FROM ubuntu:20.04
+FROM registry.redhat.io/ubi9/ubi:9.4
 
-RUN apt-get update && apt-get install -y \
+RUN dnf update -y && dnf install -y \
     unzip \
     tar \
     gzip \
-    libssl1.1 \
-    libcurl4 \
+    openssl-libs \
+    libcurl \
     libxml2 \
-    libxslt1.1 \
-    libpq5 \
-    unixodbc \
+    libxslt \
+    postgresql-libs \
+    unixODBC \
     && mkdir -p /opt/totvs/appserver \
     && mkdir -p /opt/totvs/protheus/apo \
     && mkdir -p /opt/totvs/protheus/protheus_data/system \
     && mkdir -p /opt/totvs/protheus/protheus_data/systemload
 
 COPY appserver.tar.GZ /tmp/
-RUN tar -xzf /tmp/appserver.tar.GZ -C /opt/totvs/ \
-    && chmod +x /opt/totvs/appserver/appsrvlinux
 
 COPY appserver.ini /opt/totvs/appserver/
 COPY *.rpo /opt/totvs/protheus/apo/
@@ -33,4 +31,4 @@ RUN cd /tmp && unzip help.ZIP && cp *.txt /opt/totvs/protheus/protheus_data/syst
     && ls -la /opt/totvs/protheus/protheus_data/system/ \
     && ls -la /opt/totvs/protheus/protheus_data/systemload/
 
-CMD ["/opt/totvs/appserver/appsrvlinux"]
+# CMD ["/opt/totvs/appserver/appsrvlinux"]
