@@ -17,18 +17,18 @@ RUN zypper refresh && zypper install -y \
 
 COPY appserver.tar.GZ /tmp/
 
-COPY appserver.ini /opt/totvs/appserver/
-COPY *.rpo /opt/totvs/protheus/apo/
-COPY *.unq /opt/totvs/protheus/protheus_data/systemload/
-COPY *.txt /opt/totvs/protheus/protheus_data/systemload/
-COPY menus/ /opt/totvs/protheus/protheus_data/system/
-COPY help.ZIP /opt/totvs/protheus/protheus_data/systemload/
+# COPY appserver.ini /opt/totvs/appserver/
+# COPY *.rpo /opt/totvs/protheus/apo/
+# COPY *.unq /opt/totvs/protheus/protheus_data/systemload/
+# COPY *.txt /opt/totvs/protheus/protheus_data/systemload/
+# COPY menus/ /opt/totvs/protheus/protheus_data/system/
+# COPY help.ZIP /opt/totvs/protheus/protheus_data/systemload/
 
-RUN cd /opt/totvs/protheus/protheus_data/systemload && unzip help.ZIP \
-    && echo "Verificando arquivos copiados:" \
-    && ls -la /opt/totvs/appserver/ \
-    && ls -la /opt/totvs/protheus/apo/ \
-    && ls -la /opt/totvs/protheus/protheus_data/system/ \
-    && ls -la /opt/totvs/protheus/protheus_data/systemload/
+# RUN cd /opt/totvs/protheus/protheus_data/systemload && unzip help.ZIP \
+#     && echo "Verificando arquivos copiados:" \
+#     && ls -la /opt/totvs/appserver/ \
+#     && ls -la /opt/totvs/protheus/apo/ \
+#     && ls -la /opt/totvs/protheus/protheus_data/system/ \
+#     && ls -la /opt/totvs/protheus/protheus_data/systemload/
 
 # CMD ["/opt/totvs/appserver/appsrvlinux"]
