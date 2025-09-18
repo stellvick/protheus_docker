@@ -32,4 +32,4 @@ RUN echo "Verificando arquivos copiados:" \
     && ls -la /opt/totvs/protheus/protheus_data/system/ \
     && ls -la /opt/totvs/protheus/protheus_data/systemload/
 
-CMD ["sh", "-c", "/opt/totvs/appserver/appsrvlinux & tail -f /opt/totvs/appserver/console.log"]
+CMD ["sh", "-c", "/opt/totvs/appserver/appsrvlinux && tail -f /opt/totvs/appserver/console.log"]
