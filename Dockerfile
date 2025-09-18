@@ -9,6 +9,8 @@ RUN zypper refresh && zypper install -y \
     libxml2 \
     libxslt \
     unixODBC \
+    net-tools \
+    curl \
     && mkdir -p /opt/totvs/appserver \
     && mkdir -p /opt/totvs/protheus/apo \
     && mkdir -p /opt/totvs/protheus/protheus_data/system \
@@ -22,7 +24,7 @@ COPY *.txt /opt/totvs/protheus/protheus_data/systemload/
 COPY menus/ /opt/totvs/protheus/protheus_data/system/
 COPY help/ /opt/totvs/protheus/protheus_data/
 
-RUN cd /opt/totvs/appserver && tar -vzxf appserver.tar.GZ
+RUN cd /opt/totvs/appserver && tar -vzxf appserver.tar.GZ && rm appserver.tar.GZ
 
 RUN echo "Verificando arquivos copiados:" \
     && ls -la /opt/totvs/appserver/ \
