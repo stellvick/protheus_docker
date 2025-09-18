@@ -40,9 +40,9 @@ services:
       - license
     networks:
       - protheus-network
-    command: bash
-    stdin_open: true
-    tty: true
+    # command: bash
+    # stdin_open: true
+    # tty: true
     ports:
       - "1234:1234"
       - "8080:8080"
