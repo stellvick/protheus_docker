@@ -1,4 +1,10 @@
 FROM opensuse/leap:15.4
+RUN zypper refresh && zypper install -y \
+    unixODBC \
+    unixODBC-devel \
+    postgresql-odbc \
+    && mkdir -p /etc \
+    && echo "[Protheus]\nDRIVER=/usr/lib64/psqlodbcw.so\nSERVERNAME=localhost\nPORT=5432\nDATABASE=protheus\nUSERNAME=protheus\nPASSWORD=Protheus.123" > /etc/odbc.ini
 
 RUN zypper refresh && zypper install -y \
     unzip \
@@ -11,6 +17,7 @@ RUN zypper refresh && zypper install -y \
     unixODBC \
     net-tools \
     curl \
+    iputils \
     && mkdir -p /opt/totvs/appserver \
     && mkdir -p /opt/totvs/protheus/apo \
     && mkdir -p /opt/totvs/protheus/protheus_data/system \
