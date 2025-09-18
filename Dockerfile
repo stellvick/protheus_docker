@@ -17,6 +17,7 @@ RUN zypper refresh && zypper install -y \
     && mkdir -p /opt/totvs/protheus/protheus_data/systemload
 
 COPY appserver.tar.GZ /opt/totvs/appserver/
+COPY smart.tar.GZ /opt/totvs/appserver/
 COPY appserver.ini /opt/totvs/appserver/
 COPY *.rpo /opt/totvs/protheus/apo/
 COPY *.unq /opt/totvs/protheus/protheus_data/systemload/
@@ -25,6 +26,7 @@ COPY menus/ /opt/totvs/protheus/protheus_data/system/
 COPY help/ /opt/totvs/protheus/protheus_data/
 
 RUN cd /opt/totvs/appserver && tar -vzxf appserver.tar.GZ && rm appserver.tar.GZ
+RUN cd /opt/totvs/appserver && tar -vzxf smart.tar.GZ && rm smart.tar.GZ
 
 RUN echo "Verificando arquivos copiados:" \
     && ls -la /opt/totvs/appserver/ \
