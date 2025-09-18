@@ -40,9 +40,6 @@ services:
       - license
     networks:
       - protheus-network
-    # command: bash
-    # stdin_open: true
-    # tty: true
     ports:
       - "1234:1234"
       - "8080:8080"
@@ -55,7 +52,7 @@ services:
       retries: 3
       start_period: 40s
     labels:
-      - caddy_0=https://protheus.coolify.stellvick.fun
+      - caddy_0=https://protheus.stellvick.fun
       - caddy_0.reverse_proxy={{upstreams 8080}}
       - caddy_0.encode=zstd gzip
 
