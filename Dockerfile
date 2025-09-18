@@ -14,29 +14,20 @@ RUN zypper refresh && zypper install -y \
     && mkdir -p /opt/totvs/protheus/protheus_data/system \
     && mkdir -p /opt/totvs/protheus/protheus_data/systemload
 
-# Copia arquivos necessários
-COPY appserver.tar.GZ /tmp/
+COPY appserver.tar.GZ /opt/totvs/appserver/
 COPY appserver.ini /opt/totvs/appserver/
 COPY *.rpo /opt/totvs/protheus/apo/
 COPY *.unq /opt/totvs/protheus/protheus_data/systemload/
 COPY *.txt /opt/totvs/protheus/protheus_data/systemload/
 COPY menus/ /opt/totvs/protheus/protheus_data/system/
-COPY help/ /tmp/
+COPY help/ /opt/totvs/protheus/protheus_data/
 
-# Debug: mostra se o help folder realmente está presente
-RUN ls -lh /tmp/help/ || echo "⚠️ help folder not found"
+RUN cd /opt/totvs/appserver && tar -vzxf appserver.tar.GZ
 
-# Copia arquivos do help se a pasta existir
-RUN if [ -d /tmp/help ]; then \
-      cp /tmp/help/*.txt /opt/totvs/protheus/protheus_data/systemload/; \
-    else \
-      echo "⚠️ help folder not found, skipping."; \
-    fi \
-    && echo "Verificando arquivos copiados:" \
+RUN echo "Verificando arquivos copiados:" \
     && ls -la /opt/totvs/appserver/ \
     && ls -la /opt/totvs/protheus/apo/ \
     && ls -la /opt/totvs/protheus/protheus_data/system/ \
     && ls -la /opt/totvs/protheus/protheus_data/systemload/
 
-# CMD padrão (pode descomentar quando quiser rodar o appserver)
-# CMD ["/opt/totvs/appserver/appsrvlinux"]
+CMD ["/opt/totvs/appserver/appsrvlinux"]
