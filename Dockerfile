@@ -21,17 +21,16 @@ COPY *.rpo /opt/totvs/protheus/apo/
 COPY *.unq /opt/totvs/protheus/protheus_data/systemload/
 COPY *.txt /opt/totvs/protheus/protheus_data/systemload/
 COPY menus/ /opt/totvs/protheus/protheus_data/system/
-COPY help.zip /tmp/
+COPY help/ /tmp/
 
-# Debug: mostra se o help.zip realmente está presente e válido
-RUN ls -lh /tmp/help.zip && unzip -t /tmp/help.zip || echo "⚠️ help.zip inválido ou corrompido"
+# Debug: mostra se o help folder realmente está presente
+RUN ls -lh /tmp/help/ || echo "⚠️ help folder not found"
 
-# Descompacta help.zip se for válido
-RUN if unzip -t /tmp/help.zip >/dev/null 2>&1; then \
-      unzip -o /tmp/help.zip -d /tmp/help && \
+# Copia arquivos do help se a pasta existir
+RUN if [ -d /tmp/help ]; then \
       cp /tmp/help/*.txt /opt/totvs/protheus/protheus_data/systemload/; \
     else \
-      echo "⚠️ help.zip não é válido, pulando etapa de extração."; \
+      echo "⚠️ help folder not found, skipping."; \
     fi \
     && echo "Verificando arquivos copiados:" \
     && ls -la /opt/totvs/appserver/ \
