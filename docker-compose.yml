@@ -29,6 +29,7 @@ services:
       - sh
       - -c
       - |
+        rm -rf /opt/totvs/dbaccess/multi/dbaccess.ini
         cat > /opt/totvs/dbaccess/multi/dbaccess.ini << 'EOF'
         [environment]
         alias=protheus
