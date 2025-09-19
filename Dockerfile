@@ -4,7 +4,7 @@ RUN zypper refresh && zypper install -y \
     unixODBC-devel \
     postgresql-odbc \
     && mkdir -p /etc \
-    && echo "[Protheus]\nDRIVER=/usr/lib64/psqlodbcw.so\nSERVERNAME=localhost\nPORT=5432\nDATABASE=protheus\nUSERNAME=protheus\nPASSWORD=Protheus.123" > /etc/odbc.ini
+    && echo "[Protheus]\nDRIVER=/usr/lib64/psqlodbcw.so\nSERVERNAME=postgres-iniciado\nPORT=5432\nDATABASE=protheus\nUSERNAME=postgres\nPASSWORD=postgres" > /etc/odbc.ini
 
 RUN zypper refresh && zypper install -y \
     unzip \
