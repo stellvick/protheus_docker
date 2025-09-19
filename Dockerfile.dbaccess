@@ -1,0 +1,28 @@
+FROM opensuse/leap:15.4
+RUN zypper refresh && zypper install -y \
+    unixODBC \
+    unixODBC-devel \
+    postgresql-odbc \
+    && mkdir -p /etc \
+    && printf "[PostgreSQL]\nDRIVER=PostgreSQL\nSERVERNAME=postgres-iniciado\nPORT=5432\nDATABASE=protheus\nUSERNAME=postgres\nPASSWORD=postgres\n" > /etc/odbc.ini
+
+RUN zypper refresh && zypper install -y \
+    unzip \
+    tar \
+    gzip \
+    openssl \
+    libcurl4 \
+    libxml2 \
+    libxslt \
+    unixODBC \
+    net-tools \
+    curl \
+    iputils
+
+COPY dbaccess.tar.GZ /opt/totvs/dbaccess/
+RUN cd /opt/totvs/dbaccess && tar -vzxf dbaccess.tar.GZ && rm dbaccess.tar.GZ
+RUN chmod +x /opt/totvs/dbaccess/tools/dbaccesscfg
+RUN cd /opt/totvs/dbaccess/tools && ./dbaccesscfg -u postgres -p postgres -a PostgreSQL -d postgres -c '/usr/lib64/libodbc.so'
+RUN cp /opt/totvs/dbaccess/tools/dbaccess.ini /opt/totvs/dbaccess/multi/
+
+CMD ["sh", "-c", "/opt/totvs/dbaccess/multi/dbaccess64"]

@@ -21,13 +21,23 @@ services:
     networks:
       - protheus-network
 
+  dbaccess:
+    build:
+      context: .
+      dockerfile: Dockerfile.dbaccess
+    depends_on:
+      - postgres-iniciado
+    networks:
+      - protheus-network
+
   appserver:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.appserver
     depends_on:
       - postgres-iniciado
       - license
+      - dbaccess
     networks:
       - protheus-network
     ports:
@@ -35,12 +45,6 @@ services:
       - "8080:8080"
       - "8081:8081"
       - "9090:9090"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080 && curl -f http://localhost:8081 && curl -f http://localhost:9090"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
 volumes:
   postgres_data:
