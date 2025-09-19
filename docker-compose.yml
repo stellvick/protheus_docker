@@ -25,6 +25,8 @@ services:
     image: "totvsengpro/dbaccess-postgres-dev"
     volumes:
       - ./dbaccess.ini:/opt/totvs/dbaccess/multi/dbaccess.ini
+      - ./odbc.ini:/etc/odbc.ini
+      - ./odbcinst.ini:/etc/odbcinst.ini
     depends_on:
       - postgres-iniciado
       - license
