@@ -46,7 +46,7 @@ services:
         licenseserver=license
         licenseport=5555
         EOF
-        exec /opt/totvs/dbaccess/bin/dbaccess64
+        exec ./dbaccess64
     depends_on:
       - postgres-iniciado
       - license
