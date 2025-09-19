@@ -11,7 +11,7 @@ services:
       - caddy_0.encode=zstd gzip 
 
   postgres-iniciado:
-    image: "totvsengpro/postgres-dev:12.1.2410_bra"
+    image: "postgres:12"
     environment:
       - POSTGRES_DB=protheus
       - POSTGRES_USER=postgres
@@ -38,6 +38,8 @@ services:
       - postgres-iniciado
       - license
       - dbaccess
+    environment:
+      - TOTVS_DBSERVER=dbaccess
     networks:
       - protheus-network
     ports:
