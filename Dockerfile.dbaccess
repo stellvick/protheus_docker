@@ -19,6 +19,7 @@ RUN zypper refresh && zypper install -y \
     curl \
     iputils
 
+RUN mkdir -p /opt/totvs/dbaccess
 RUN curl -L "https://drive.google.com/uc?export=download&id=1hQiNvPKQuALb5CELJMkdBLgIK5xeBdiG" -o /opt/totvs/dbaccess/dbaccess.tar.GZ
 RUN cd /opt/totvs/dbaccess && tar -vzxf dbaccess.tar.GZ && rm dbaccess.tar.GZ
 RUN chmod +x /opt/totvs/dbaccess/tools/dbaccesscfg
