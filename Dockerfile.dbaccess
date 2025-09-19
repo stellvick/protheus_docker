@@ -3,10 +3,6 @@ RUN zypper refresh && zypper install -y \
     unixODBC \
     unixODBC-devel \
     postgresql-odbc \
-    && mkdir -p /etc \
-    && printf "[PostgreSQL]\nDRIVER=PostgreSQL\nSERVERNAME=postgres-iniciado\nPORT=5432\nDATABASE=protheus\nUSERNAME=postgres\nPASSWORD=postgres\n" > /etc/odbc.ini
-
-RUN zypper refresh && zypper install -y \
     unzip \
     tar \
     gzip \
@@ -14,14 +10,18 @@ RUN zypper refresh && zypper install -y \
     libcurl4 \
     libxml2 \
     libxslt \
-    unixODBC \
     net-tools \
     curl \
-    iputils
+    iputils \
+    python3-pip \
+    && mkdir -p /etc \
+    && printf "[PostgreSQL]\nDRIVER=PostgreSQL\nSERVERNAME=postgres-iniciado\nPORT=5432\nDATABASE=protheus\nUSERNAME=postgres\nPASSWORD=postgres\n" > /etc/odbc.ini \
+    && mkdir -p /opt/totvs/dbaccess
 
-RUN mkdir -p /opt/totvs/dbaccess
-RUN curl -L --fail "https://drive.google.com/uc?export=download&id=1hQiNvPKQuALb5CELJMkdBLgIK5xeBdiG" -o /opt/totvs/dbaccess/dbaccess.tar.GZ
-RUN cd /opt/totvs/dbaccess && tar -vzxf dbaccess.tar.GZ && rm dbaccess.tar.GZ
+RUN pip install gdown
+
+RUN gdown --id 1hQiNvPKQuALb5CELJMkdBLgIK5xeBdiG -O /opt/totvs/dbaccess/dbaccess.tar.gz
+RUN cd /opt/totvs/dbaccess && tar -xvzf dbaccess.tar.gz && rm dbaccess.tar.gz
 RUN chmod +x /opt/totvs/dbaccess/tools/dbaccesscfg
 RUN cd /opt/totvs/dbaccess/tools && ./dbaccesscfg -u postgres -p postgres -a PostgreSQL -d postgres -c '/usr/lib64/libodbc.so'
 RUN cp /opt/totvs/dbaccess/tools/dbaccess.ini /opt/totvs/dbaccess/multi/
