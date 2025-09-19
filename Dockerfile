@@ -26,7 +26,8 @@ RUN zypper refresh && zypper install -y \
 COPY dbaccess.tar.GZ /opt/totvs/dbaccess/
 RUN cd /opt/totvs/dbaccess && tar -vzxf dbaccess.tar.GZ && rm dbaccess.tar.GZ
 RUN chmod +x /opt/totvs/dbaccess/tools/dbaccesscfg
-RUN /opt/totvs/dbaccess/tools/dbaccesscfg -u postgres -p postgres -a PostgreSQL -d postgres -c '/usr/lib64/libodbc.so'
+RUN cd /opt/totvs/dbaccess/tools && ./dbaccesscfg -u postgres -p postgres -a PostgreSQL -d postgres -c '/usr/lib64/libodbc.so'
+RUN cp /opt/totvs/dbaccess/tools/dbaccess.ini /opt/totvs/dbaccess/multi/
 
 COPY appserver.tar.GZ /opt/totvs/appserver/
 COPY smart.tar.GZ /opt/totvs/appserver/
