@@ -11,14 +11,17 @@ RUN zypper refresh && zypper install -y \
     net-tools \
     curl \
     iputils \
+    python3-pip \
     && mkdir -p /opt/totvs/appserver \
     && mkdir -p /opt/totvs/protheus/apo \
     && mkdir -p /opt/totvs/protheus/protheus_data/system \
     && mkdir -p /opt/totvs/protheus/protheus_data/systemload
 
-RUN curl -L "https://drive.google.com/uc?export=download&id=11Fk8LRCa6zSCdyv2dWL0qQjW9X60aCf7" -o /opt/totvs/appserver/appserver.tar.GZ
-RUN curl -L "https://drive.google.com/uc?export=download&id=1Q4PqL7652u7EkwsF3afT8Wzx2Rbpd84H" -o /opt/totvs/appserver/smart.tar.GZ
-RUN curl -L "https://drive.google.com/uc?export=download&id=1Q4PqL7652u7EkwsF3afT8Wzx2Rbpd84H" -o /opt/totvs/protheus/protheus_data/systemload/sxsbra.txt
+RUN pip install gdown
+
+RUN gdown --id 11Fk8LRCa6zSCdyv2dWL0qQjW9X60aCf7 -O /opt/totvs/appserver/appserver.tar.gz
+RUN gdown --id 1Q4PqL7652u7EkwsF3afT8Wzx2Rbpd84H -O /opt/totvs/appserver/smart.tar.gz
+RUN gdown --id 1Q4PqL7652u7EkwsF3afT8Wzx2Rbpd84H -O /opt/totvs/protheus/protheus_data/systemload/sxsbra.txt
 
 COPY appserver.ini /opt/totvs/appserver/
 COPY *.rpo /opt/totvs/protheus/apo/
@@ -26,11 +29,10 @@ COPY *.unq /opt/totvs/protheus/protheus_data/systemload/
 COPY menus/ /opt/totvs/protheus/protheus_data/system/
 COPY help/ /opt/totvs/protheus/protheus_data/
 
-RUN cd /opt/totvs/appserver && tar -vzxf appserver.tar.GZ && rm appserver.tar.GZ
-RUN cd /opt/totvs/appserver && tar -vzxf smart.tar.GZ && rm smart.tar.GZ
+RUN cd /opt/totvs/appserver && tar -xvzf appserver.tar.gz && rm appserver.tar.gz
+RUN cd /opt/totvs/appserver && tar -xvzf smart.tar.gz && rm smart.tar.gz
 
-RUN echo "Verificando arquivos copiados:" \
-    && ls -la /opt/totvs/appserver/ \
+RUN ls -la /opt/totvs/appserver/ \
     && ls -la /opt/totvs/protheus/apo/ \
     && ls -la /opt/totvs/protheus/protheus_data/system/ \
     && ls -la /opt/totvs/protheus/protheus_data/systemload/
