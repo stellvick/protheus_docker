@@ -48,6 +48,14 @@ services:
       - "8081:8081"
       - "9090:9090"
 
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8082:8080"
+    networks:
+      - protheus-network
+
 volumes:
   postgres_data:
 
