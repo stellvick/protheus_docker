@@ -16,12 +16,13 @@ RUN zypper refresh && zypper install -y \
     && mkdir -p /opt/totvs/protheus/protheus_data/system \
     && mkdir -p /opt/totvs/protheus/protheus_data/systemload
 
-COPY appserver.tar.GZ /opt/totvs/appserver/
-COPY smart.tar.GZ /opt/totvs/appserver/
+RUN curl -L "https://drive.google.com/uc?export=download&id=11Fk8LRCa6zSCdyv2dWL0qQjW9X60aCf7" -o /opt/totvs/appserver/appserver.tar.GZ
+RUN curl -L "https://drive.google.com/uc?export=download&id=1Q4PqL7652u7EkwsF3afT8Wzx2Rbpd84H" -o /opt/totvs/appserver/smart.tar.GZ
+RUN curl -L "https://drive.google.com/uc?export=download&id=1Q4PqL7652u7EkwsF3afT8Wzx2Rbpd84H" -o /opt/totvs/protheus/protheus_data/systemload/sxsbra.txt
+
 COPY appserver.ini /opt/totvs/appserver/
 COPY *.rpo /opt/totvs/protheus/apo/
 COPY *.unq /opt/totvs/protheus/protheus_data/systemload/
-COPY *.txt /opt/totvs/protheus/protheus_data/systemload/
 COPY menus/ /opt/totvs/protheus/protheus_data/system/
 COPY help/ /opt/totvs/protheus/protheus_data/
 
