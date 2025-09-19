@@ -8,7 +8,7 @@ services:
     labels:
       - caddy_0=https://<subdomínio-license>.coolify.stellvick.fun
       - caddy_0.reverse_proxy={{upstreams 5555}}
-      - caddy_0.encode=zstd gzip
+      - caddy_0.encode=zstd gzip 
 
   postgres-iniciado:
     image: "totvsengpro/postgres-dev:12.1.2410_bra"
