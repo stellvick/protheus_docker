@@ -24,6 +24,9 @@ RUN zypper refresh && zypper install -y \
     && mkdir -p /opt/totvs/protheus/protheus_data/system \
     && mkdir -p /opt/totvs/protheus/protheus_data/systemload
 
+COPY dbaccess.tar.GZ /opt/totvs/dbaccess/
+COPY dbacess.ini /opt/totvs/dbaccess/
+
 COPY appserver.tar.GZ /opt/totvs/appserver/
 COPY smart.tar.GZ /opt/totvs/appserver/
 COPY appserver.ini /opt/totvs/appserver/
