@@ -24,29 +24,29 @@ services:
   dbaccess-postgres:
     image: "totvsengpro/dbaccess-postgres-dev"
     volumes:
-      - ./:/opt/totvs/dbaccess/multi
-    command:
-      - sh
-      - -c
-      - |
-        rm -rf /opt/totvs/dbaccess/multi/dbaccess.ini
-        cat > /opt/totvs/dbaccess/multi/dbaccess.ini << 'EOF'
-        [environment]
-        alias=protheus
-        driver=postgres
-        server=postgres-iniciado
-        database=protheus
-        port=5432
-        user=postgres
-        password=postgres
-        connectionstring=DRIVER={PostgreSQL};SERVERNAME=postgres-iniciado;PORT=5432;DATABASE=protheus;USERNAME=postgres;PASSWORD=postgres
-        connectionmode=2
+      - ./dbaccess.ini:/opt/totvs/dbaccess/multi/dbaccess.ini
+    # command:
+    #   - sh
+    #   - -c
+    #   - |
+    #     rm -rf /opt/totvs/dbaccess/multi/dbaccess.ini
+    #     cat > /opt/totvs/dbaccess/multi/dbaccess.ini << 'EOF'
+    #     [environment]
+    #     alias=protheus
+    #     driver=postgres
+    #     server=postgres-iniciado
+    #     database=protheus
+    #     port=5432
+    #     user=postgres
+    #     password=postgres
+    #     connectionstring=DRIVER={PostgreSQL};SERVERNAME=postgres-iniciado;PORT=5432;DATABASE=protheus;USERNAME=postgres;PASSWORD=postgres
+    #     connectionmode=2
         
-        [general]
-        licenseserver=license
-        licenseport=5555
-        EOF
-        exec ./dbaccess64
+    #     [general]
+    #     licenseserver=license
+    #     licenseport=5555
+    #     EOF
+    #     exec ./dbaccess64
     depends_on:
       - postgres-iniciado
       - license
