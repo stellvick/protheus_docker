@@ -25,12 +25,6 @@ RUN zypper refresh && zypper install -y \
 
 COPY dbaccess.tar.GZ /opt/totvs/dbaccess/
 RUN cd /opt/totvs/dbaccess && tar -vzxf dbaccess.tar.GZ && rm dbaccess.tar.GZ
-RUN /opt/totvs/dbaccess/tools/dbaccesscfg \
-    -u postgres \
-    -p postgres \
-    -a PostgreSQL \
-    -d postgres \
-    -c '/usr/lib64/libodbc.so'
 
 COPY appserver.tar.GZ /opt/totvs/appserver/
 COPY smart.tar.GZ /opt/totvs/appserver/
@@ -50,4 +44,4 @@ RUN echo "Verificando arquivos copiados:" \
     && ls -la /opt/totvs/protheus/protheus_data/system/ \
     && ls -la /opt/totvs/protheus/protheus_data/systemload/
 
-CMD ["sh", "-c", "/opt/totvs/dbaccess/multi/dbaccess64 && /opt/totvs/appserver/appsrvlinux && tail -f /opt/totvs/appserver/console.log"]
+CMD ["sh", "-c", "/opt/totvs/dbaccess/tools/dbaccesscfg -u postgres -p postgres -a PostgreSQL -d postgres -c '/usr/lib64/libodbc.so' && /opt/totvs/dbaccess/multi/dbaccess64 && /opt/totvs/appserver/appsrvlinux && tail -f /opt/totvs/appserver/console.log"]
