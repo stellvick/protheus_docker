@@ -216,10 +216,20 @@ COPY init-services.sh /usr/local/bin/init-services.sh
 RUN chmod +x /usr/local/bin/setup-permissions.sh /usr/local/bin/setup-config.sh /usr/local/bin/start.sh /usr/local/bin/init-services.sh /usr/local/bin/totvs*
 
 # Configurar ODBC
-RUN zypper install -y unixODBC unixODBC-devel && \
-    mkdir -p /etc/unixODBC
+RUN zypper install -y unixODBC unixODBC-devel postgresql postgresql-devel postgresql13-odbc && \
+    mkdir -p /etc/unixODBC && \
+    mkdir -p /tmp/protheus
+
+# Copiar configurações ODBC
 COPY advpl_config/odbc.ini /etc/unixODBC/odbc.ini
-RUN chmod 644 /etc/unixODBC/odbc.ini
+COPY advpl_config/odbcinst.ini /etc/unixODBC/odbcinst.ini
+RUN chmod 644 /etc/unixODBC/odbc.ini && \
+    chmod 644 /etc/unixODBC/odbcinst.ini
+
+# Configurar variáveis de ambiente para ODBC
+ENV ODBCINI=/etc/unixODBC/odbc.ini
+ENV ODBCSYSINI=/etc/unixODBC
+ENV LIBPATH=/usr/lib64:$LIBPATH
 
 # Expor porta padrão
 EXPOSE 3000

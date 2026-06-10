@@ -32,6 +32,9 @@ services:
     environment:
       - TZ=America/Sao_Paulo
       - NODE_ENV=production
+      - ODBCINI=/etc/unixODBC/odbc.ini
+      - ODBCSYSINI=/etc/unixODBC
+      - LIBPATH=/usr/lib64:$LIBPATH
     
     # Configuração de saúde
     healthcheck:
