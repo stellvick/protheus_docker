@@ -18,7 +18,9 @@ RUN zypper refresh && \
     python3 \
     python3-pip \
     unzip \
-    tar && \
+    tar \
+    gzip \
+    bzip2 && \
     zypper clean -a
 
 # Instalar gdown para download do Google Drive (melhor para arquivos grandes)
