@@ -17,7 +17,8 @@ RUN zypper refresh && \
     ca-certificates-mozilla \
     python3 \
     python3-pip \
-    unzip && \
+    unzip \
+    tar && \
     zypper clean -a
 
 # Instalar gdown para download do Google Drive (melhor para arquivos grandes)
@@ -33,38 +34,37 @@ WORKDIR /app
 # Copiar arquivos (se houver) 
 COPY . .
 
-# Download Protheus from Google Drive usando gdown (melhor para arquivos grandes)
+# Download Protheus from Google Drive
 RUN echo "Baixando Protheus..." && \
-    gdown "https://drive.google.com/uc?id=1MY1-rq6vPlDCz88OSK2tZUADa4JnZu5H" -O ./protheus.zip && \
-    ls -lh ./protheus.zip && \
-    file ./protheus.zip
+    gdown --id 1MY1-rq6vPlDCz88OSK2tZUADa4JnZu5H --output protheus.zip && \
+    echo "Download completo. Verificando arquivo..." && \
+    ls -lh protheus.zip && \
+    file protheus.zip
 
 # Extrair Protheus
-RUN if [ -f ./protheus.zip ] && file ./protheus.zip | grep -q "Zip archive"; then \
-    echo "Extraindo Protheus..." && \
-    mkdir -p ./protheus && \
-    unzip -q ./protheus.zip -d ./protheus && \
-    ls -lh ./protheus && \
-    echo "Extraindo arquivos TAR.GZ..." && \
-    cd ./protheus && \
-    for tar_file in *.TAR.GZ; do \
+RUN echo "Iniciando extração..." && \
+    mkdir -p protheus && \
+    unzip -q protheus.zip -d protheus && \
+    echo "Primeiro nível extraído:" && \
+    ls -lh protheus && \
+    echo "" && \
+    echo "Descompactando TAR.GZ..." && \
+    cd protheus && \
+    for tar_file in *.tar.gz *.TAR.GZ; do \
       if [ -f "$tar_file" ]; then \
-        echo "Descompactando $tar_file..."; \
-        tar -xzf "$tar_file"; \
+        echo "Processando: $tar_file"; \
+        tar -xzf "$tar_file" || echo "Erro ao extrair $tar_file"; \
       fi; \
     done && \
     cd /app && \
-    rm ./protheus.zip && \
-    echo "Limpando arquivos TAR.GZ..."; \
-    cd ./protheus && \
-    rm -f *.TAR.GZ *.ZIP && \
-    cd /app; \
-  else \
-    echo "ERRO: protheus.zip não encontrado ou não é um ZIP válido"; \
-    file ./protheus.zip; \
-    ls -lh ./protheus.zip || echo "Arquivo não existe"; \
-    exit 1; \
-  fi
+    echo "Limpeza de arquivos compactados..." && \
+    rm -f protheus.zip && \
+    cd protheus && \
+    rm -f *.tar.gz *.TAR.GZ *.zip *.ZIP && \
+    cd /app && \
+    echo "Extração completa!" && \
+    echo "Estrutura final:" && \
+    ls -lh protheus
 
 # Copiar script de inicialização
 COPY start.sh /usr/local/bin/start.sh
