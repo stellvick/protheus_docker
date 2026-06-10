@@ -1,0 +1,17 @@
+FROM nginx:1.27-alpine
+
+# Copiar configuração nginx
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Criar diretórios necessários
+RUN mkdir -p /etc/nginx/certs /etc/nginx/private
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD wget --quiet --tries=1 --spider http://localhost:80/ || exit 1
+
+# Expor portas
+EXPOSE 80 443
+
+# CMD padrão do nginx
+CMD ["nginx", "-g", "daemon off;"]

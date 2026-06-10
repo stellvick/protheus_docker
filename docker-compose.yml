@@ -65,14 +65,16 @@ services:
 
   # Serviço de proxy reverso para HTTPS (opcional, usando nginx)
   nginx-ssl:
-    image: nginx:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    image: nginx-ssl:latest
     container_name: nginx-ssl-proxy
     ports:
       - "443:443"
       - "80:80"
     
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./ssl/certs:/etc/nginx/certs:ro
       - ./ssl/private:/etc/nginx/private:ro
     
