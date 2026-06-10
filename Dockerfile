@@ -57,8 +57,12 @@ mkdir -p /app/totvs/protheus_data/systemload
 # Extrair Protheus conforme instruções TOTVS
 RUN echo "========== INICIANDO EXTRAÇÃO ==========" && \
     mkdir -p /tmp/protheus && \
-    echo "Extraindo protheus.zip..." && \
-    unzip -v protheus.zip -d /tmp/protheus && \
+    echo "Extraindo protheus.zip (com subdirectório)..." && \
+    unzip -q protheus.zip -d /tmp && \
+    echo "" && \
+    echo "Movendo arquivos de Protheus Arquivo para /tmp/protheus..." && \
+    mv "/tmp/Protheus Arquivo"/* /tmp/protheus/ 2>/dev/null || true && \
+    rm -rf "/tmp/Protheus Arquivo" "/tmp/__MACOSX" 2>/dev/null || true && \
     echo "" && \
     echo "Conteúdo de /tmp/protheus:" && \
     ls -lha /tmp/protheus && \
@@ -70,11 +74,11 @@ RUN echo "" && \
     if [ -f "/tmp/protheus/dicionario.ZIP" ]; then \
       echo "Arquivo encontrado: /tmp/protheus/dicionario.ZIP" && \
       echo "Descompactando em /app/totvs/protheus_data/systemload/..." && \
-      unzip -v "/tmp/protheus/dicionario.ZIP" -d /app/totvs/protheus_data/systemload/ && \
-      echo "Dicionários extraídos com sucesso" && \
+      unzip -q "/tmp/protheus/dicionario.ZIP" -d /app/totvs/protheus_data/systemload/ && \
+      echo "✓ Dicionários extraídos com sucesso" && \
       ls -lha /app/totvs/protheus_data/systemload/; \
     else \
-      echo "AVISO: dicionario.ZIP não encontrado!"; \
+      echo "✗ ERRO: dicionario.ZIP não encontrado em /tmp/protheus/"; \
     fi && \
     echo "========== FIM DICIONÁRIOS =========="
 
@@ -84,11 +88,11 @@ RUN echo "" && \
     if [ -f "/tmp/protheus/help.ZIP" ]; then \
       echo "Arquivo encontrado: /tmp/protheus/help.ZIP" && \
       echo "Descompactando em /app/totvs/protheus_data/systemload/..." && \
-      unzip -v "/tmp/protheus/help.ZIP" -d /app/totvs/protheus_data/systemload/ && \
-      echo "Helps extraídos com sucesso" && \
+      unzip -q "/tmp/protheus/help.ZIP" -d /app/totvs/protheus_data/systemload/ && \
+      echo "✓ Helps extraídos com sucesso" && \
       ls -lha /app/totvs/protheus_data/systemload/; \
     else \
-      echo "AVISO: help.ZIP não encontrado!"; \
+      echo "✗ ERRO: help.ZIP não encontrado em /tmp/protheus/"; \
     fi && \
     echo "========== FIM ARQUIVOS DE HELP =========="
 
@@ -98,11 +102,11 @@ RUN echo "" && \
     if [ -f "/tmp/protheus/menu.ZIP" ]; then \
       echo "Arquivo encontrado: /tmp/protheus/menu.ZIP" && \
       echo "Descompactando em /app/totvs/protheus_data/system/..." && \
-      unzip -v "/tmp/protheus/menu.ZIP" -d /app/totvs/protheus_data/system/ && \
-      echo "Menus extraídos com sucesso" && \
+      unzip -q "/tmp/protheus/menu.ZIP" -d /app/totvs/protheus_data/system/ && \
+      echo "✓ Menus extraídos com sucesso" && \
       ls -lha /app/totvs/protheus_data/system/; \
     else \
-      echo "AVISO: menu.ZIP não encontrado!"; \
+      echo "✗ ERRO: menu.ZIP não encontrado em /tmp/protheus/"; \
     fi && \
     echo "========== FIM ARQUIVOS DE MENU =========="
 
@@ -111,12 +115,13 @@ RUN echo "" && \
     echo "========== DBACCESS ==========" && \
     if [ -f "/tmp/protheus/dbaccess.TAR.GZ" ]; then \
       echo "Arquivo encontrado: /tmp/protheus/dbaccess.TAR.GZ" && \
+      echo "Tamanho: $(ls -lh /tmp/protheus/dbaccess.TAR.GZ | awk '{print $5}')" && \
       echo "Descompactando em /app/totvs/protheus/bin/dbaccess/..." && \
-      tar -xvf "/tmp/protheus/dbaccess.TAR.GZ" -C /app/totvs/protheus/bin/dbaccess/ && \
-      echo "DBAccess extraído com sucesso" && \
+      tar -xf "/tmp/protheus/dbaccess.TAR.GZ" -C /app/totvs/protheus/bin/dbaccess/ && \
+      echo "✓ DBAccess extraído com sucesso" && \
       ls -lha /app/totvs/protheus/bin/dbaccess/; \
     else \
-      echo "AVISO: dbaccess.TAR.GZ não encontrado!"; \
+      echo "✗ ERRO: dbaccess.TAR.GZ não encontrado em /tmp/protheus/"; \
     fi && \
     echo "========== FIM DBACCESS =========="
 
@@ -127,12 +132,12 @@ RUN echo "" && \
       echo "Arquivo encontrado: /tmp/protheus/appserver.TAR.GZ" && \
       echo "Tamanho: $(ls -lh /tmp/protheus/appserver.TAR.GZ | awk '{print $5}')" && \
       echo "Descompactando em /app/totvs/protheus/bin/appbroker/..." && \
-      tar -xvf "/tmp/protheus/appserver.TAR.GZ" -C /app/totvs/protheus/bin/appbroker/ && \
-      echo "AppServer extraído com sucesso" && \
+      tar -xf "/tmp/protheus/appserver.TAR.GZ" -C /app/totvs/protheus/bin/appbroker/ && \
+      echo "✓ AppServer extraído com sucesso" && \
       ls -lha /app/totvs/protheus/bin/appbroker/; \
     else \
-      echo "ERRO: appserver.TAR.GZ não encontrado!"; \
-      echo "Arquivos disponíveis em /tmp/protheus:"; \
+      echo "✗ ERRO: appserver.TAR.GZ não encontrado!"; \
+      echo "Arquivos realmente disponíveis em /tmp/protheus:"; \
       ls -lha /tmp/protheus/; \
     fi && \
     echo "========== FIM APPSERVER =========="
@@ -148,35 +153,36 @@ RUN echo "" && \
     echo "========== REPOSITÓRIO DE OBJETOS ==========" && \
     if [ -f "/tmp/protheus/TTTM120.RPO" ]; then \
       echo "Arquivo encontrado: /tmp/protheus/TTTM120.RPO" && \
+      echo "Tamanho: $(ls -lh /tmp/protheus/TTTM120.RPO | awk '{print $5}')" && \
       echo "Copiando para /app/totvs/protheus/rpo/..." && \
       cp "/tmp/protheus/TTTM120.RPO" /app/totvs/protheus/rpo/tttp120.rpo && \
-      echo "Repositório copiado com sucesso" && \
+      echo "✓ Repositório copiado com sucesso" && \
       ls -lh /app/totvs/protheus/rpo/; \
     else \
-      echo "AVISO: TTTM120.RPO não encontrado!"; \
+      echo "✗ ERRO: TTTM120.RPO não encontrado em /tmp/protheus/"; \
     fi && \
     echo "========== FIM REPOSITÓRIO =========="
 
 # Copiar serviços de Broker e Secundários
 RUN echo "" && \
     echo "========== CONFIGURANDO SERVIÇOS ==========" && \
-    if [ -d "/app/totvs/protheus/bin/appbroker" ]; then \
-      echo "AppBroker encontrado: /app/totvs/protheus/bin/appbroker/" && \
-      echo "Conteúdo:" && \
+    if [ -d "/app/totvs/protheus/bin/appbroker" ] && [ "$(ls -A /app/totvs/protheus/bin/appbroker/)" ]; then \
+      echo "✓ AppBroker encontrado com conteúdo:" && \
       ls -lha /app/totvs/protheus/bin/appbroker/ && \
       echo "" && \
       if [ -d "/app/totvs/protheus/bin/appsec01" ]; then \
         echo "Copiando para AppSec01..." && \
-        cp -rf /app/totvs/protheus/bin/appbroker/* /app/totvs/protheus/bin/appsec01/; \
-        echo "AppSec01 - OK"; \
+        cp -rf /app/totvs/protheus/bin/appbroker/* /app/totvs/protheus/bin/appsec01/ && \
+        echo "✓ AppSec01 - OK"; \
       fi && \
       if [ -d "/app/totvs/protheus/bin/appsec02" ]; then \
         echo "Copiando para AppSec02..." && \
-        cp -rf /app/totvs/protheus/bin/appbroker/* /app/totvs/protheus/bin/appsec02/; \
-        echo "AppSec02 - OK"; \
+        cp -rf /app/totvs/protheus/bin/appbroker/* /app/totvs/protheus/bin/appsec02/ && \
+        echo "✓ AppSec02 - OK"; \
       fi; \
     else \
-      echo "AVISO: AppBroker não foi encontrado em /app/totvs/protheus/bin/appbroker/"; \
+      echo "✗ AVISO: AppBroker está vazio em /app/totvs/protheus/bin/appbroker/"; \
+      echo "O arquivo appserver.TAR.GZ pode não ter sido extraído corretamente"; \
     fi && \
     echo "========== FIM CONFIGURAÇÃO SERVIÇOS =========="
 
