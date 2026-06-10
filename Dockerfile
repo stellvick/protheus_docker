@@ -55,66 +55,150 @@ mkdir -p /app/totvs/protheus_data/system \
 mkdir -p /app/totvs/protheus_data/systemload
 
 # Extrair Protheus conforme instruções TOTVS
-RUN echo "Iniciando extração..." && \
+RUN echo "========== INICIANDO EXTRAÇÃO ==========" && \
     mkdir -p /tmp/protheus && \
-    unzip -q protheus.zip -d /tmp/protheus && \
-    echo "Arquivo extraído em /tmp/protheus" && \
-    ls -lh /tmp/protheus
+    echo "Extraindo protheus.zip..." && \
+    unzip -v protheus.zip -d /tmp/protheus && \
+    echo "" && \
+    echo "Conteúdo de /tmp/protheus:" && \
+    ls -lha /tmp/protheus && \
+    echo "========== FIM EXTRAÇÃO INICIAL =========="
 
 # Descompactar Dicionários de Dados
-RUN if [ -f "/tmp/protheus/dicionario.ZIP" ]; then \
-      echo "Descompactando dicionários..." && \
-      unzip -q "/tmp/protheus/dicionario.ZIP" -d /app/totvs/protheus_data/systemload/; \
-    fi
+RUN echo "" && \
+    echo "========== DICIONÁRIOS ==========" && \
+    if [ -f "/tmp/protheus/dicionario.ZIP" ]; then \
+      echo "Arquivo encontrado: /tmp/protheus/dicionario.ZIP" && \
+      echo "Descompactando em /app/totvs/protheus_data/systemload/..." && \
+      unzip -v "/tmp/protheus/dicionario.ZIP" -d /app/totvs/protheus_data/systemload/ && \
+      echo "Dicionários extraídos com sucesso" && \
+      ls -lha /app/totvs/protheus_data/systemload/; \
+    else \
+      echo "AVISO: dicionario.ZIP não encontrado!"; \
+    fi && \
+    echo "========== FIM DICIONÁRIOS =========="
 
 # Descompactar Arquivos de Help
-RUN if [ -f "/tmp/protheus/help.ZIP" ]; then \
-      echo "Descompactando helps..." && \
-      unzip -q "/tmp/protheus/help.ZIP" -d /app/totvs/protheus_data/systemload/; \
-    fi
+RUN echo "" && \
+    echo "========== ARQUIVOS DE HELP ==========" && \
+    if [ -f "/tmp/protheus/help.ZIP" ]; then \
+      echo "Arquivo encontrado: /tmp/protheus/help.ZIP" && \
+      echo "Descompactando em /app/totvs/protheus_data/systemload/..." && \
+      unzip -v "/tmp/protheus/help.ZIP" -d /app/totvs/protheus_data/systemload/ && \
+      echo "Helps extraídos com sucesso" && \
+      ls -lha /app/totvs/protheus_data/systemload/; \
+    else \
+      echo "AVISO: help.ZIP não encontrado!"; \
+    fi && \
+    echo "========== FIM ARQUIVOS DE HELP =========="
 
 # Descompactar Arquivos de Menu
-RUN if [ -f "/tmp/protheus/menu.ZIP" ]; then \
-      echo "Descompactando menus..." && \
-      unzip -q "/tmp/protheus/menu.ZIP" -d /app/totvs/protheus_data/system/; \
-    fi
+RUN echo "" && \
+    echo "========== ARQUIVOS DE MENU ==========" && \
+    if [ -f "/tmp/protheus/menu.ZIP" ]; then \
+      echo "Arquivo encontrado: /tmp/protheus/menu.ZIP" && \
+      echo "Descompactando em /app/totvs/protheus_data/system/..." && \
+      unzip -v "/tmp/protheus/menu.ZIP" -d /app/totvs/protheus_data/system/ && \
+      echo "Menus extraídos com sucesso" && \
+      ls -lha /app/totvs/protheus_data/system/; \
+    else \
+      echo "AVISO: menu.ZIP não encontrado!"; \
+    fi && \
+    echo "========== FIM ARQUIVOS DE MENU =========="
 
 # Descompactar DBAccess
-RUN if [ -f "/tmp/protheus/dbaccess.TAR.GZ" ]; then \
-      echo "Descompactando DBAccess..." && \
-      tar -xf "/tmp/protheus/dbaccess.TAR.GZ" -C /app/totvs/protheus/bin/dbaccess/; \
-    fi
+RUN echo "" && \
+    echo "========== DBACCESS ==========" && \
+    if [ -f "/tmp/protheus/dbaccess.TAR.GZ" ]; then \
+      echo "Arquivo encontrado: /tmp/protheus/dbaccess.TAR.GZ" && \
+      echo "Descompactando em /app/totvs/protheus/bin/dbaccess/..." && \
+      tar -xvf "/tmp/protheus/dbaccess.TAR.GZ" -C /app/totvs/protheus/bin/dbaccess/ && \
+      echo "DBAccess extraído com sucesso" && \
+      ls -lha /app/totvs/protheus/bin/dbaccess/; \
+    else \
+      echo "AVISO: dbaccess.TAR.GZ não encontrado!"; \
+    fi && \
+    echo "========== FIM DBACCESS =========="
 
 # Descompactar AppServer
-RUN if [ -f "/tmp/protheus/appserver.TAR.GZ" ]; then \
-      echo "Descompactando AppServer..." && \
-      tar -xf "/tmp/protheus/appserver.TAR.GZ" -C /app/totvs/protheus/bin/appbroker/; \
-    fi
+RUN echo "" && \
+    echo "========== APPSERVER ==========" && \
+    if [ -f "/tmp/protheus/appserver.TAR.GZ" ]; then \
+      echo "Arquivo encontrado: /tmp/protheus/appserver.TAR.GZ" && \
+      echo "Tamanho: $(ls -lh /tmp/protheus/appserver.TAR.GZ | awk '{print $5}')" && \
+      echo "Descompactando em /app/totvs/protheus/bin/appbroker/..." && \
+      tar -xvf "/tmp/protheus/appserver.TAR.GZ" -C /app/totvs/protheus/bin/appbroker/ && \
+      echo "AppServer extraído com sucesso" && \
+      ls -lha /app/totvs/protheus/bin/appbroker/; \
+    else \
+      echo "ERRO: appserver.TAR.GZ não encontrado!"; \
+      echo "Arquivos disponíveis em /tmp/protheus:"; \
+      ls -lha /tmp/protheus/; \
+    fi && \
+    echo "========== FIM APPSERVER =========="
 
 # Configurar Licença (descontinuado após 12.1.2210, mas mantemos estrutura)
-RUN if [ -f "/tmp/protheus/licence.TAR.GZ" ]; then \
-      echo "Processando Licença..." && \
-      tar -xf "/tmp/protheus/licence.TAR.GZ" -C /app/totvs/protheus/bin/licenseserver/; \
-    fi
+# RUN if [ -f "/tmp/protheus/licence.TAR.GZ" ]; then \
+#       echo "Processando Licença..." && \
+#       tar -xf "/tmp/protheus/licence.TAR.GZ" -C /app/totvs/protheus/bin/licenseserver/; \
+#     fi
 
 # Copiar Repositório de Objetos
-RUN if [ -f "/tmp/protheus/TTTM120.RPO" ]; then \
-      echo "Copiando repositório..." && \
-      cp "/tmp/protheus/TTTM120.RPO" /app/totvs/protheus/rpo/tttp120.rpo; \
-    fi
+RUN echo "" && \
+    echo "========== REPOSITÓRIO DE OBJETOS ==========" && \
+    if [ -f "/tmp/protheus/TTTM120.RPO" ]; then \
+      echo "Arquivo encontrado: /tmp/protheus/TTTM120.RPO" && \
+      echo "Copiando para /app/totvs/protheus/rpo/..." && \
+      cp "/tmp/protheus/TTTM120.RPO" /app/totvs/protheus/rpo/tttp120.rpo && \
+      echo "Repositório copiado com sucesso" && \
+      ls -lh /app/totvs/protheus/rpo/; \
+    else \
+      echo "AVISO: TTTM120.RPO não encontrado!"; \
+    fi && \
+    echo "========== FIM REPOSITÓRIO =========="
 
-# Copiar serviços de Broker e Secundários (Lock Server, descontinuado após 12.1.2210)
-RUN echo "Configurando serviços..." && \
-    if [ -d "/app/totvs/protheus/bin/appbroker" ] && [ -d "/app/totvs/protheus/bin/appsec01" ]; then \
-      cp -rf /app/totvs/protheus/bin/appbroker/* /app/totvs/protheus/bin/appsec01/ 2>/dev/null || true && \
-      cp -rf /app/totvs/protheus/bin/appbroker/* /app/totvs/protheus/bin/appsec02/ 2>/dev/null || true; \
-    fi
+# Copiar serviços de Broker e Secundários
+RUN echo "" && \
+    echo "========== CONFIGURANDO SERVIÇOS ==========" && \
+    if [ -d "/app/totvs/protheus/bin/appbroker" ]; then \
+      echo "AppBroker encontrado: /app/totvs/protheus/bin/appbroker/" && \
+      echo "Conteúdo:" && \
+      ls -lha /app/totvs/protheus/bin/appbroker/ && \
+      echo "" && \
+      if [ -d "/app/totvs/protheus/bin/appsec01" ]; then \
+        echo "Copiando para AppSec01..." && \
+        cp -rf /app/totvs/protheus/bin/appbroker/* /app/totvs/protheus/bin/appsec01/; \
+        echo "AppSec01 - OK"; \
+      fi && \
+      if [ -d "/app/totvs/protheus/bin/appsec02" ]; then \
+        echo "Copiando para AppSec02..." && \
+        cp -rf /app/totvs/protheus/bin/appbroker/* /app/totvs/protheus/bin/appsec02/; \
+        echo "AppSec02 - OK"; \
+      fi; \
+    else \
+      echo "AVISO: AppBroker não foi encontrado em /app/totvs/protheus/bin/appbroker/"; \
+    fi && \
+    echo "========== FIM CONFIGURAÇÃO SERVIÇOS =========="
 
-# Limpeza de arquivos temporários
-RUN echo "Limpando arquivos temporários..." && \
+# Resumo final da estrutura
+RUN echo "" && \
+    echo "========== RESUMO FINAL ==========" && \
+    echo "Estrutura de diretórios criada:" && \
+    echo "" && \
+    echo "--- Protheus Bin ---" && \
+    find /app/totvs/protheus/bin -type d | head -20 && \
+    echo "" && \
+    echo "--- Protheus Rpo ---" && \
+    ls -lha /app/totvs/protheus/rpo/ && \
+    echo "" && \
+    echo "--- Protheus Data ---" && \
+    find /app/totvs/protheus_data -type f | wc -l && echo "arquivos em protheus_data" && \
+    echo "" && \
+    echo "Limpando arquivos temporários..." && \
     rm -rf /tmp/protheus && \
-    rm -f protheus.zip && \
-    echo "Extração completa!"
+    rm -f /app/protheus.zip && \
+    echo "Limpeza concluída!" && \
+    echo "========== FIM RESUMO =========="
 
 # Copiar script de inicialização
 COPY start.sh /usr/local/bin/start.sh
