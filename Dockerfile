@@ -1,15 +1,35 @@
-FROM totvsengpro/appserver-dev
+FROM opensuse/leap:15.4
 
-RUN mkdir -p /opt/totvs/appserver \
-    && mkdir -p /opt/totvs/protheus/apo \
-    && mkdir -p /opt/totvs/protheus/protheus_data/systemload
+# Instalar pacotes essenciais
+RUN zypper refresh && \
+    zypper install -y \
+    curl \
+    wget \
+    git \
+    openssh \
+    openssh-clients \
+    vim \
+    nano \
+    net-tools \
+    iputils \
+    timezone \
+    ca-certificates \
+    ca-certificates-mozilla && \
+    zypper clean -a
 
-COPY appserver.ini /opt/totvs/appserver/
-COPY *.rpo /opt/totvs/protheus/apo/
-COPY *.unq /opt/totvs/protheus/protheus_data/systemload/
-COPY *.txt /opt/totvs/protheus/protheus_data/systemload/
+# Configurar timezone
+ENV TZ=America/Sao_Paulo
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-RUN echo "Verificando arquivos copiados:" \
-    && ls -la /opt/totvs/appserver/ \
-    && ls -la /opt/totvs/protheus/apo/ \
-    && ls -la /opt/totvs/protheus/protheus_data/systemload/
+# Criar diretório de trabalho
+WORKDIR /app
+
+# Copiar arquivos (se houver)
+COPY . .
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3000/ || exit 1
+
+# Comando padrão
+CMD ["/bin/bash"]

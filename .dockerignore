@@ -1,19 +1,13 @@
-# Git
 .git
 .gitignore
-
-# Documentation
-README.md
-LICENSE
-
-# Docker
-docker-compose.yml
-Dockerfile
-
-# IDE
+.env.local
+node_modules
+npm-debug.log
+dist
+build
+.DS_Store
+*.log
 .vscode
 .idea
-
-# OS
-.DS_Store
-Thumbs.db
+coverage
+.nyc_output

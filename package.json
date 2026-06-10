@@ -1,0 +1,46 @@
+{
+  "name": "opensuse-leap-docker",
+  "version": "1.0.0",
+  "description": "openSUSE Leap 15.4 Docker container for Coolify with HTTPS support",
+  "main": "index.js",
+  "scripts": {
+    "start": "docker-compose up -d",
+    "dev": "docker-compose -f docker-compose.dev.yml up",
+    "prod": "docker-compose -f docker-compose.prod.yml up -d",
+    "build": "docker-compose build",
+    "build:prod": "docker-compose -f docker-compose.prod.yml build",
+    "down": "docker-compose down",
+    "logs": "docker-compose logs -f",
+    "ps": "docker-compose ps",
+    "shell": "docker-compose exec app /bin/bash",
+    "test": "docker-compose ps && curl -f https://localhost/ || true",
+    "clean": "docker-compose down -v && docker system prune -f",
+    "certs": "./generate-certs.sh",
+    "init": "./init.sh",
+    "validate": "docker-compose config"
+  },
+  "keywords": [
+    "opensuse",
+    "docker",
+    "coolify",
+    "https",
+    "ssl",
+    "tls",
+    "leap"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seu-usuario/protheus_docker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/seu-usuario/protheus_docker/issues"
+  },
+  "homepage": "https://github.com/seu-usuario/protheus_docker#readme",
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "devDependencies": {}
+}

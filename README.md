@@ -1,142 +1,214 @@
-# Protheus Docker
+# openSUSE Leap 15.4 Docker para Coolify
 
-Ambiente Protheus containerizado para desenvolvimento usando Docker e Docker Compose.
+Containerização completa de openSUSE Leap 15.4 com suporte a HTTPS, otimizado para ser usado com **Coolify**.
 
-## 📋 Pré-requisitos
+## 📋 Requisitos
 
-- Docker
-- Docker Compose
-- Arquivos do Protheus:
-  - `tttm120.rpo` (Repositório Protheus)
-  - `sx2.unq` (Dicionário de dados)
-  - `sxsbra.txt` (Dicionário de dados)
+- Docker >= 20.10
+- Docker Compose >= 1.29
+- Coolify >= 3.0 (opcional)
 
-## 🚀 Configuração
+## 🚀 Quick Start
 
-### Estrutura do Projeto
+### 1. Clonar/Preparar o repositório
+
+```bash
+cd /Users/igorrabelo/Documents/GIT/protheus_docker
+```
+
+### 2. Criar estrutura de diretórios
+
+```bash
+mkdir -p ssl/certs ssl/private data logs
+```
+
+### 3. Gerar certificados SSL/TLS (auto-assinado)
+
+```bash
+# Gerar chave privada
+openssl genrsa -out ssl/private/key.pem 2048
+
+# Gerar certificado
+openssl req -new -x509 -key ssl/private/key.pem \
+  -out ssl/certs/cert.pem -days 365 \
+  -subj "/C=BR/ST=SP/L=Sao Paulo/O=MyOrg/CN=localhost"
+```
+
+### 4. Build da imagem
+
+```bash
+docker-compose build
+```
+
+### 5. Iniciar os containers
+
+```bash
+# Em foreground (para ver logs)
+docker-compose up
+
+# Em background
+docker-compose up -d
+```
+
+### 6. Verificar status
+
+```bash
+docker-compose ps
+docker-compose logs -f
+```
+
+## 🔐 Configuração HTTPS
+
+### Com Certificados Let's Encrypt (Recomendado)
+
+1. Use o Coolify para gerar certificados automaticamente
+2. Ou configure um webhook para renovação automática
+
+### Com Certificados Auto-assinados
+
+Já incluído no quick start acima.
+
+### Com Certificados Customizados
+
+```bash
+# Copiar seus certificados para:
+cp /caminho/para/cert.pem ssl/certs/
+cp /caminho/para/key.pem ssl/private/
+```
+
+## 📁 Estrutura de Diretórios
 
 ```
 protheus_docker/
-├── docker-compose.yml      # Orquestração dos serviços
-├── Dockerfile             # Imagem personalizada do AppServer
-├── appserver.ini          # Configuração do servidor de aplicação
-├── dbaccess.ini          # Configuração de acesso ao banco
-├── tttm120.rpo           # Repositório Protheus
-├── sx2.unq               # Dicionário de dados
-├── sxsbra.txt            # Dicionário de dados
-└── README.md             # Este arquivo
+├── Dockerfile                 # Imagem Docker base
+├── docker-compose.yml         # Configuração Docker Compose
+├── nginx.conf                 # Configuração do proxy reverso
+├── entrypoint.sh             # Script de inicialização
+├── .dockerignore             # Arquivos ignorados no build
+├── .env                      # Variáveis de ambiente
+├── README.md                 # Este arquivo
+├── data/                     # Dados persistentes
+├── logs/                     # Logs da aplicação
+└── ssl/                      # Certificados SSL/TLS
+    ├── certs/               # Certificados públicos
+    └── private/             # Chaves privadas
 ```
 
-### Serviços Inclusos
+## 🔧 Variáveis de Ambiente
 
-- **License Server**: Servidor de licenças TOTVS
-- **PostgreSQL**: Banco de dados
-- **DBAccess**: Middleware de acesso ao banco
-- **AppServer**: Servidor de aplicação Protheus
+Edite o arquivo `.env` para customizar:
 
-## 🐳 Como usar
+```env
+TZ=America/Sao_Paulo
+NODE_ENV=production
+LOG_LEVEL=info
+```
 
-### Usando Docker Compose
+## 📊 Portas Expostas
+
+| Porta | Protocolo | Descrição |
+|-------|-----------|-----------|
+| 80    | HTTP      | Redireciona para HTTPS |
+| 443   | HTTPS     | Proxy reverso SSL/TLS |
+| 3000  | HTTP      | Aplicação interna |
+
+## 🛑 Parar os containers
 
 ```bash
-# Iniciar todos os serviços
-docker-compose up -d
-
-# Verificar status dos containers
-docker-compose ps
-
-# Visualizar logs
-docker-compose logs -f appserver
-
-# Parar os serviços
 docker-compose down
+
+# Remover volumes também
+docker-compose down -v
 ```
 
-### Usando Coolify
-
-1. Importe este repositório no Coolify
-2. Configure o deployment usando o `docker-compose.yml`
-3. Os arquivos de configuração serão automaticamente montados nos containers
-
-## 🔧 Configuração
-
-### Portas Expostas
-
-- **1234**: Porta principal do AppServer (TCP)
-- **8080**: Porta do WebApp
-- **8081**: Porta REST
-
-### Banco de Dados
-
-- **Host**: postgres-iniciado
-- **Porta**: 5432
-- **Database**: protheus
-- **Usuário**: postgres
-- **Senha**: postgres
-
-### Configurações Personalizáveis
-
-#### appserver.ini
-- Configurações do servidor de aplicação
-- Paths dos arquivos RPO e dicionários
-- Configurações de memória e performance
-
-#### dbaccess.ini
-- String de conexão com PostgreSQL
-- Configurações do servidor de licenças
-- Parâmetros de conectividade
-
-## 📝 Notas Importantes
-
-⚠️ **Aviso**: As imagens são para uso estritamente de desenvolvimento e não são homologadas para ambientes de produção.
-
-### Para hosts Debian/Ubuntu
-
-Ajustar a seguinte variável de kernel:
+## 📝 Logs
 
 ```bash
-# Backup do valor atual (será perdido na próxima inicialização)
-sudo echo 32767 > /proc/sys/fs/file-max
+# Todos os logs
+docker-compose logs -f
+
+# Apenas da aplicação
+docker-compose logs -f app
+
+# Apenas do nginx
+docker-compose logs -f nginx-ssl
 ```
 
-## 🔍 Troubleshooting
-
-### Verificar logs dos containers
+## 🔄 Reiniciar
 
 ```bash
-# Logs do AppServer
-docker-compose logs appserver
-
-# Logs do PostgreSQL
-docker-compose logs postgres-iniciado
-
-# Logs do DBAccess
-docker-compose logs dbaccess-postgres
-```
-
-### Reiniciar serviços específicos
-
-```bash
-# Reiniciar apenas o AppServer
-docker-compose restart appserver 
-
-# Reiniciar todos os serviços
 docker-compose restart
 ```
 
-## 📚 Documentação Oficial
+## 🐛 Troubleshooting
 
-- [Tutorial Protheus Docker](https://docker-protheus.engpro.totvs.com.br/00-tutorial-protheus-docker/)
-- [Documentação TOTVS](https://tdn.totvs.com/)
+### Verificar saúde do container
 
-## 🤝 Contribuição
+```bash
+docker-compose ps
+```
 
-1. Fork o projeto
-2. Crie sua feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+### Entrar no container
+
+```bash
+docker-compose exec app /bin/bash
+```
+
+### Rebuild completo
+
+```bash
+docker-compose down
+docker system prune
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+## 📦 Instalação de Pacotes
+
+Como openSUSE usa `zypper`:
+
+```bash
+# Dentro do container
+zypper refresh
+zypper install <pacote>
+```
+
+Ou adicione ao Dockerfile:
+
+```dockerfile
+RUN zypper install -y <pacote>
+```
+
+## 🔒 Segurança
+
+- ✅ Redução de privilégios (no-new-privileges)
+- ✅ Drop de capabilities não essenciais
+- ✅ HTTPS obrigatório
+- ✅ Health checks automáticos
+- ✅ Limites de recursos configuráveis
+- ✅ Logging centralizado
+
+## 🎯 Integração com Coolify
+
+1. Faça push do repositório para GitHub/GitLab
+2. No Coolify, crie uma nova aplicação
+3. Selecione o tipo "Docker Compose"
+4. Aponte para este repositório
+5. Configure domínio e certificados
+6. Deploy automático
+
+## 📚 Referências
+
+- [openSUSE Leap 15.4](https://www.opensuse.org)
+- [Docker Documentation](https://docs.docker.com)
+- [Coolify Documentation](https://coolify.io)
+- [Nginx Documentation](https://nginx.org/en/docs/)
 
 ## 📄 Licença
 
-Este projeto está sob a licença especificada no arquivo `LICENSE`.
+MIT
+
+---
+
+**Criado para**: Protheus + Docker + Coolify
+**Versão**: 1.0.0

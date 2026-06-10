@@ -5,29 +5,27 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: opensuse-leap:15.4
-    container_name: opensuse-leap-app
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2024-01-01}
+        VCS_REF: ${VCS_REF:-latest}
     
-    # Configuração de rede
+    image: opensuse-leap:15.4-prod
+    container_name: opensuse-leap-prod
+    
     ports:
-      - "80:80"
-      - "443:443"
-      - "3000:3000"  # Porta padrão de desenvolvimento
+      - "3000:3000"
     
-    # Volumes
     volumes:
       - ./data:/app/data
-      - ./ssl:/app/ssl:ro  # Para certificados SSL/TLS
       - ./logs:/app/logs
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     
-    # Variáveis de ambiente
     environment:
       - TZ=America/Sao_Paulo
       - NODE_ENV=production
+      - LOG_LEVEL=info
     
-    # Configuração de saúde
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/"]
       interval: 30s
@@ -35,11 +33,10 @@ services:
       retries: 3
       start_period: 40s
     
-    # Reinicialização automática
-    restart: unless-stopped
+    restart: always
     
-    # Limites de recurso (opcional)
     deploy:
+      replicas: 1
       resources:
         limits:
           cpus: '2'
@@ -47,26 +44,37 @@ services:
         reservations:
           cpus: '1'
           memory: 1G
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
     
-    # Logging
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
+        labels: "service=app"
     
-    # Segurança
     security_opt:
       - no-new-privileges:true
+    
     cap_drop:
       - ALL
+    
     cap_add:
       - NET_BIND_SERVICE
+    
+    read_only_filesystem: false
+    
+    networks:
+      - app-network
 
-  # Serviço de proxy reverso para HTTPS (opcional, usando nginx)
-  nginx-ssl:
-    image: nginx:latest
-    container_name: nginx-ssl-proxy
+  # Nginx proxy reverso para HTTPS
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: nginx-prod
+    
     ports:
       - "443:443"
       - "80:80"
@@ -77,19 +85,52 @@ services:
       - ./ssl/private:/etc/nginx/private:ro
     
     depends_on:
-      - app
+      app:
+        condition: service_healthy
     
-    restart: unless-stopped
+    restart: always
+    
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
     
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
+        labels: "service=nginx"
     
     networks:
       - app-network
+    
+    cap_drop:
+      - ALL
+    
+    cap_add:
+      - NET_BIND_SERVICE
 
 networks:
   app-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  app_data:
+    driver: local
+  app_logs:
+    driver: local
