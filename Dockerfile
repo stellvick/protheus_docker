@@ -23,9 +23,12 @@ RUN zypper refresh && \
 ENV TZ=America/Sao_Paulo
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# Download Protheus from Google Drive
-RUN curl -L -o /protheus.zip "https://drive.google.com/uc?export=download&id=1MY1-rq6vPlDCz88OSK2tZUADa4JnZu5H" && \
-    if [ -f /protheus.zip ]; then ls -lh /protheus.zip; else echo "Download failed"; fi
+# Download Protheus from Google Drive (com suporte para confirmação)
+RUN wget --quiet --load-cookies /tmp/cookies.txt \
+  "https://drive.google.com/uc?export=download&confirm=t&id=1MY1-rq6vPlDCz88OSK2tZUADa4JnZu5H" \
+  -O /protheus.zip && \
+  rm -f /tmp/cookies.txt && \
+  ls -lh /protheus.zip
 
 # Criar diretório de trabalho
 WORKDIR /app
