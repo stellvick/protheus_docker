@@ -24,7 +24,7 @@ ENV TZ=America/Sao_Paulo
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Download Protheus from Google Drive (com suporte para confirmação)
-RUN wget --quiet --load-cookies /tmp/cookies.txt \
+RUN wget --no-verbose --load-cookies /tmp/cookies.txt \
   "https://drive.google.com/uc?export=download&confirm=t&id=1MY1-rq6vPlDCz88OSK2tZUADa4JnZu5H" \
   -O /protheus.zip && \
   rm -f /tmp/cookies.txt && \
@@ -35,6 +35,16 @@ WORKDIR /app
 
 # Copiar arquivos (se houver)
 COPY . .
+
+# Extrair Protheus
+RUN if [ -f /protheus.zip ] && file /protheus.zip | grep -q "Zip archive"; then \
+    echo "Extraindo Protheus..." && \
+    unzip -q /protheus.zip -d /app/protheus && \
+    ls -lh /app/protheus && \
+    rm /protheus.zip; \
+  else \
+    echo "AVISO: protheus.zip não é um arquivo ZIP válido ou não foi baixado corretamente"; \
+  fi
 
 # Copiar script de inicialização
 COPY start.sh /usr/local/bin/start.sh
