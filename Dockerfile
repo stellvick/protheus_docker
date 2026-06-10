@@ -215,6 +215,12 @@ COPY start.sh /usr/local/bin/start.sh
 COPY init-services.sh /usr/local/bin/init-services.sh
 RUN chmod +x /usr/local/bin/setup-permissions.sh /usr/local/bin/setup-config.sh /usr/local/bin/start.sh /usr/local/bin/init-services.sh /usr/local/bin/totvs*
 
+# Configurar ODBC
+RUN zypper install -y unixODBC unixODBC-devel && \
+    mkdir -p /etc/unixODBC
+COPY advpl_config/odbc.ini /etc/unixODBC/odbc.ini
+RUN chmod 644 /etc/unixODBC/odbc.ini
+
 # Expor porta padrão
 EXPOSE 3000
 
