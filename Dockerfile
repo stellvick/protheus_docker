@@ -14,7 +14,8 @@ RUN zypper refresh && \
     iputils \
     timezone \
     ca-certificates \
-    ca-certificates-mozilla && \
+    ca-certificates-mozilla \
+    python3 && \
     zypper clean -a
 
 # Configurar timezone
@@ -27,9 +28,16 @@ WORKDIR /app
 # Copiar arquivos (se houver)
 COPY . .
 
+# Copiar script de inicialização
+COPY start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
+# Expor porta padrão
+EXPOSE 3000
+
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:3000/ || exit 1
 
 # Comando padrão
-CMD ["/bin/bash"]
+CMD ["/usr/local/bin/start.sh"]
