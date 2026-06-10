@@ -4,7 +4,8 @@
 # Prepara o ambiente para execução dos serviços
 #
 
-set -e
+# Não parar em erros (permitir que continue)
+set +e
 
 echo "Configurando permissões para serviços Protheus..."
 

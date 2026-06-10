@@ -53,6 +53,16 @@ LOG_FILE="${LOG_DIR}/container-startup.log"
     # Configurar trap para sinais
     trap cleanup SIGTERM SIGINT
     
+    # Executar setup de permissões (primeira execução)
+    if [ -x "/usr/local/bin/setup-permissions.sh" ]; then
+        echo "=========================================="
+        echo "Setting up Protheus Permissions"
+        echo "=========================================="
+        echo ""
+        /usr/local/bin/setup-permissions.sh 2>&1 | tee -a "$LOG_FILE"
+        echo ""
+    fi
+    
     # Garantir que configurações estão atualizadas
     if [ -x "/usr/local/bin/setup-config.sh" ]; then
         echo "=========================================="
