@@ -16,19 +16,20 @@ RUN zypper refresh && \
     ca-certificates \
     ca-certificates-mozilla \
     python3 \
+    python3-pip \
     unzip && \
     zypper clean -a
+
+# Instalar gdown para download do Google Drive (melhor para arquivos grandes)
+RUN pip3 install --no-cache-dir gdown
 
 # Configurar timezone
 ENV TZ=America/Sao_Paulo
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# Download Protheus from Google Drive (com suporte para confirmação)
-RUN wget --no-verbose --load-cookies /tmp/cookies.txt \
-  "https://drive.google.com/uc?export=download&confirm=t&id=1MY1-rq6vPlDCz88OSK2tZUADa4JnZu5H" \
-  -O /protheus.zip && \
-  rm -f /tmp/cookies.txt && \
-  ls -lh /protheus.zip
+# Download Protheus from Google Drive usando gdown (melhor para arquivos grandes)
+RUN gdown "https://drive.google.com/uc?id=1MY1-rq6vPlDCz88OSK2tZUADa4JnZu5H" -O /protheus.zip && \
+    ls -lh /protheus.zip
 
 # Criar diretório de trabalho
 WORKDIR /app
