@@ -42,7 +42,17 @@ RUN if [ -f /protheus.zip ] && file /protheus.zip | grep -q "Zip archive"; then 
     echo "Extraindo Protheus..." && \
     unzip -q /protheus.zip -d /app/protheus && \
     ls -lh /app/protheus && \
-    rm /protheus.zip; \
+    echo "Extraindo arquivos TAR.GZ..." && \
+    cd /app/protheus && \
+    for tar_file in *.TAR.GZ; do \
+      if [ -f "$tar_file" ]; then \
+        echo "Descompactando $tar_file..."; \
+        tar -xzf "$tar_file"; \
+      fi; \
+    done && \
+    rm /protheus.zip && \
+    echo "Limpando arquivos TAR.GZ..."; \
+    rm -f *.TAR.GZ *.ZIP; \
   else \
     echo "AVISO: protheus.zip não é um arquivo ZIP válido ou não foi baixado corretamente"; \
   fi
