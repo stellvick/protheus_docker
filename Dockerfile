@@ -22,6 +22,9 @@ RUN zypper refresh && \
 ENV TZ=America/Sao_Paulo
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
+# Download Protheus from Google Drive
+RUN curl -L "https://drive.google.com/uc?export=download&id=1MY1-rq6vPlDCz88OSK2tZUADa4JnZu5H" -o /protheus.zip
+
 # Criar diretório de trabalho
 WORKDIR /app
 
