@@ -70,7 +70,49 @@ services:
       - NET_BIND_SERVICE
       - SYS_PTRACE  # Necessário para monitorar processos
       - DAC_OVERRIDE  # Necessário para criar/modificar arquivos em /var/run e /var/lock
+    
+    # Dependências de rede
+    depends_on:
+      - postgres
+
+  # PostgreSQL para Protheus
+  postgres:
+    image: postgres:15-alpine
+    container_name: protheus-postgres
+    
+    environment:
+      POSTGRES_USER: tpprd
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: tpprd
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=pt_BR.UTF-8"
+      TZ: America/Sao_Paulo
+    
+    ports:
+      - "5432:5432"
+    
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tpprd -d tpprd"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  postgres_data:
