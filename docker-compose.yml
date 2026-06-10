@@ -63,35 +63,6 @@ services:
     cap_add:
       - NET_BIND_SERVICE
 
-  # Serviço de proxy reverso para HTTPS (opcional, usando nginx)
-  nginx-ssl:
-    build:
-      context: .
-      dockerfile: Dockerfile.nginx
-    image: nginx-ssl:latest
-    container_name: nginx-ssl-proxy
-    ports:
-      - "443:443"
-      - "80:80"
-    
-    volumes:
-      - ./ssl/certs:/etc/nginx/certs:ro
-      - ./ssl/private:/etc/nginx/private:ro
-    
-    depends_on:
-      - app
-    
-    restart: unless-stopped
-    
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    
-    networks:
-      - app-network
-
 networks:
   app-network:
     driver: bridge

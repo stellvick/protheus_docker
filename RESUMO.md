@@ -18,10 +18,9 @@ Estrutura **completa e pronta para produção** de um Docker container com openS
 ```
 protheus_docker/
 ├── Dockerfile                      # Imagem base openSUSE Leap 15.4
-├── docker-compose.yml              # Config principal
-├── docker-compose.dev.yml          # Dev com PostgreSQL + Redis
-├── docker-compose.prod.yml         # Produção otimizada
-├── nginx.conf                      # Proxy reverso HTTPS
+├── docker-compose.yml              # Configuração desenvolvimento
+├── docker-compose.dev.yml          # Desenvolvimento com PostgreSQL + Redis
+├── docker-compose.prod.yml         # Produção (Coolify + Traefik)
 │
 ├── 📝 Configuração
 ├── .env                            # Variáveis de ambiente (local)
@@ -115,12 +114,11 @@ Veja **COOLIFY.md** para guia completo com screenshots.
 - ✅ Volumes persistentes
 - ✅ Networking otimizado
 
-### 🔐 HTTPS & SSL/TLS
-- ✅ Proxy reverso HTTPS (Nginx)
-- ✅ Suporte a Let's Encrypt (Coolify gerencia)
-- ✅ Auto-gerador de certificados auto-assinados
-- ✅ Headers de segurança (HSTS, CSP, etc)
-- ✅ Redireciona HTTP → HTTPS
+### 🔐 HTTPS (via Coolify + Traefik)
+- ✅ Traefik proxy reverso (Coolify)
+- ✅ Let's Encrypt automático
+- ✅ Auto-renovação a cada 90 dias
+- ✅ Redirecionamento HTTP → HTTPS
 
 ### 📊 Monitoramento & Saúde
 - ✅ Health checks automáticos
@@ -166,15 +164,15 @@ Veja **COOLIFY.md** para guia completo com screenshots.
 ### Funcionalidades Implementadas ✅
 - [x] Imagem Docker openSUSE Leap 15.4
 - [x] Docker Compose (padrão, dev, prod)
-- [x] HTTPS com Nginx proxy reverso
-- [x] Gerador de certificados SSL/TLS
+- [x] Traefik proxy reverso (Coolify)
+- [x] Gerador de certificados SSL/TLS (opcional)
 - [x] Health checks
 - [x] Logs rotacionados
 - [x] Limites de recursos (CPU, memória)
 - [x] Volumes persistentes (data, logs, ssl)
 - [x] Scripts de inicialização
 - [x] Makefile com 25+ comandos
-- [x] Documentação completa (5 guias)
+- [x] Documentação completa (6 guias)
 - [x] .env configurável
 - [x] Segurança enterprise
 - [x] Integração Coolify ready
@@ -201,7 +199,6 @@ Veja **COOLIFY.md** para guia completo com screenshots.
 ### Ferramentas & Docs
 - [Docker Documentation](https://docs.docker.com)
 - [openSUSE Leap](https://www.opensuse.org)
-- [Nginx Docs](https://nginx.org/en/docs/)
 - [Coolify Documentation](https://docs.coolify.io)
 - [Let's Encrypt](https://letsencrypt.org)
 
@@ -269,8 +266,8 @@ make help              # Ver todos os comandos
 - **Versão**: 1.0.0
 - **Base Image**: opensuse/leap:15.4
 - **Docker Compose**: v3.8
-- **Nginx**: latest (alpine)
-- **Created**: 2024
+- **Proxy Reverso**: Traefik (Coolify)
+- **Created**: 2026
 - **Status**: ✅ Pronto para produção
 
 ---

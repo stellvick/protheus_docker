@@ -81,8 +81,7 @@ cp /caminho/para/key.pem ssl/private/
 ```
 protheus_docker/
 ├── Dockerfile                 # Imagem Docker base
-├── docker-compose.yml         # Configuração Docker Compose
-├── nginx.conf                 # Configuração do proxy reverso
+├── docker-compose.yml         # Configuração Docker Compose (desenvolvimento)
 ├── entrypoint.sh             # Script de inicialização
 ├── .dockerignore             # Arquivos ignorados no build
 ├── .env                      # Variáveis de ambiente

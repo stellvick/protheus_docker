@@ -7,10 +7,9 @@ Documentação completa da estrutura de arquivos e diretórios do projeto.
 ```
 protheus_docker/
 ├── 📄 Dockerfile                  # Imagem Docker base (openSUSE Leap 15.4)
-├── 📄 docker-compose.yml          # Configuração Docker Compose (padrão)
-├── 📄 docker-compose.dev.yml      # Configuração para desenvolvimento
-├── 📄 docker-compose.prod.yml     # Configuração otimizada para produção
-├── 📄 nginx.conf                  # Configuração do proxy reverso HTTPS
+├── 📄 docker-compose.yml          # Configuração Docker Compose (desenvolvimento)
+├── 📄 docker-compose.dev.yml      # Configuração para desenvolvimento com DB
+├── 📄 docker-compose.prod.yml     # Configuração otimizada para produção (Coolify)
 ├── 📄 entrypoint.sh               # Script de inicialização do container
 ├── 📄 generate-certs.sh           # Script para gerar certificados SSL/TLS
 ├── 📄 init.sh                     # Script de inicialização do projeto

@@ -27,10 +27,9 @@ Navegação rápida para todos os arquivos e documentos do projeto.
 | Arquivo | Propósito | Quando Usar |
 |---------|-----------|-----------|
 | [Dockerfile](./Dockerfile) | Imagem base | Build |
-| [docker-compose.yml](./docker-compose.yml) | Config padrão | Production/Default |
+| [docker-compose.yml](./docker-compose.yml) | Config desenvolvimento | Dev |
 | [docker-compose.dev.yml](./docker-compose.dev.yml) | Dev com DB | Desenvolvimento |
-| [docker-compose.prod.yml](./docker-compose.prod.yml) | Otimizada prod | Produção pura |
-| [nginx.conf](./nginx.conf) | Proxy HTTPS | Build |
+| [docker-compose.prod.yml](./docker-compose.prod.yml) | Config Coolify | Production |
 
 ## ⚙️ Configuração
 

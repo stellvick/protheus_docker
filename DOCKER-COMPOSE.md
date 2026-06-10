@@ -24,26 +24,11 @@ docker-compose -f docker-compose.prod.yml up -d
 
 ---
 
-## 2. **docker-compose.nginx.yml** (Local com Nginx)
+## 🗑️ Removido: docker-compose.nginx.yml
 
-**Use este arquivo para desenvolvimento/testes locais com Nginx e HTTPS**
+Este arquivo foi removido pois **Coolify usa Traefik** como proxy reverso HTTPS. Nginx é redundante.
 
-```bash
-# Usar com Nginx (portas 80/443)
-docker-compose -f docker-compose.nginx.yml up -d
-```
-
-**Características**:
-- ✅ Nginx como proxy reverso HTTPS
-- ✅ Portas 80/443 acessíveis
-- ✅ HTTPS local
-- ✅ Certificados auto-assinados
-- ❌ Não use com Coolify (conflita com Traefik)
-
-**Quando usar?**
-- Testar HTTPS localmente
-- Desenvolvimento sem Coolify
-- Testes antes de deploy no Coolify
+Se precisar de HTTPS local sem Coolify, configure manualmente ou use Let's Encrypt.
 
 ---
 
@@ -65,11 +50,10 @@ docker-compose up -d
 
 ## 📊 Comparação
 
-| Arquivo | Nginx | Portas | Uso |
+| Arquivo | HTTPS | Portas | Uso |
 |---------|-------|--------|-----|
-| `docker-compose.prod.yml` | ❌ Não | 3000 | **Coolify** ⭐ |
-| `docker-compose.nginx.yml` | ✅ Sim | 80, 443 | Local/Testes |
-| `docker-compose.yml` | Integrado | 80, 443, 3000 | Dev |
+| `docker-compose.prod.yml` | ✅ Traefik | 3000 | **Coolify** ⭐ |
+| `docker-compose.yml` | ❌ Não | 80, 443, 3000 | Dev |
 | `docker-compose.dev.yml` | ❌ Não | 3000, 5432, 6379 | Dev + DB |
 
 ---
@@ -80,13 +64,6 @@ docker-compose up -d
 ```bash
 git push origin main
 # No Coolify, selecione: docker-compose.prod.yml
-```
-
-### Para Testar Localmente com HTTPS
-```bash
-./generate-certs.sh  # Se não tiver certificados
-docker-compose -f docker-compose.nginx.yml up -d
-curl -k https://localhost/
 ```
 
 ### Para Desenvolvimento Rápido
