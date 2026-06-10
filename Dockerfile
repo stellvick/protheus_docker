@@ -38,35 +38,83 @@ COPY . .
 
 # Download Protheus from Google Drive
 RUN echo "Baixando Protheus..." && \
-    gdown --id 1MY1-rq6vPlDCz88OSK2tZUADa4JnZu5H --output protheus.zip && \
+    gdown --id 1G6aAGlfbAbLv2u8MicoSzjuCdrYJfvf8 --output protheus.zip && \
     echo "Download completo. Verificando arquivo..." && \
     ls -lh protheus.zip && \
     file protheus.zip
 
-# Extrair Protheus
+RUN mkdir -p /totvs/protheus/bin/appbroker \
+mkdir -p /totvs/protheus/bin/appsec01 \
+mkdir -p /totvs/protheus/bin/appsec02 \
+mkdir -p /totvs/protheus/bin/dbaccess \
+mkdir -p /totvs/protheus/bin/licenseserver \
+mkdir -p /totvs/protheus/bin/log \
+mkdir -p /totvs/protheus/rpo \
+mkdir -p /totvs/protheus_data \
+mkdir -p /totvs/protheus_data/system \
+mkdir -p /totvs/protheus_data/systemload
+
+# Extrair Protheus conforme instruções TOTVS
 RUN echo "Iniciando extração..." && \
-    mkdir -p protheus && \
-    unzip -q protheus.zip -d protheus && \
-    echo "Primeiro nível extraído:" && \
-    ls -lh protheus && \
-    echo "" && \
-    echo "Descompactando TAR.GZ..." && \
-    cd protheus && \
-    for tar_file in *.tar.gz *.TAR.GZ; do \
-      if [ -f "$tar_file" ]; then \
-        echo "Processando: $tar_file"; \
-        tar -xzf "$tar_file" || echo "Erro ao extrair $tar_file"; \
-      fi; \
-    done && \
-    cd /app && \
-    echo "Limpeza de arquivos compactados..." && \
+    mkdir -p /tmp/protheus && \
+    unzip -q protheus.zip -d /tmp/protheus && \
+    echo "Arquivo extraído em /tmp/protheus" && \
+    ls -lh /tmp/protheus
+
+# Descompactar Dicionários de Dados
+RUN if [ -f "/tmp/protheus/dicionario.ZIP" ]; then \
+      echo "Descompactando dicionários..." && \
+      unzip -q "/tmp/protheus/dicionario.ZIP" -d /totvs/protheus_data/systemload/; \
+    fi
+
+# Descompactar Arquivos de Help
+RUN if [ -f "/tmp/protheus/help.ZIP" ]; then \
+      echo "Descompactando helps..." && \
+      unzip -q "/tmp/protheus/help.ZIP" -d /totvs/protheus_data/systemload/; \
+    fi
+
+# Descompactar Arquivos de Menu
+RUN if [ -f "/tmp/protheus/menu.ZIP" ]; then \
+      echo "Descompactando menus..." && \
+      unzip -q "/tmp/protheus/menu.ZIP" -d /totvs/protheus_data/system/; \
+    fi
+
+# Descompactar DBAccess
+RUN if [ -f "/tmp/protheus/dbaccess.TAR.GZ" ]; then \
+      echo "Descompactando DBAccess..." && \
+      tar -xf "/tmp/protheus/dbaccess.TAR.GZ" -C /totvs/protheus/bin/dbaccess/; \
+    fi
+
+# Descompactar AppServer
+RUN if [ -f "/tmp/protheus/appserver.TAR.GZ" ]; then \
+      echo "Descompactando AppServer..." && \
+      tar -xf "/tmp/protheus/appserver.TAR.GZ" -C /totvs/protheus/bin/appbroker/; \
+    fi
+
+# Configurar Licença (descontinuado após 12.1.2210, mas mantemos estrutura)
+RUN if [ -f "/tmp/protheus/licence.TAR.GZ" ]; then \
+      echo "Processando Licença..." && \
+      tar -xf "/tmp/protheus/licence.TAR.GZ" -C /totvs/protheus/bin/licenseserver/; \
+    fi
+
+# Copiar Repositório de Objetos
+RUN if [ -f "/tmp/protheus/TTTM120.RPO" ]; then \
+      echo "Copiando repositório..." && \
+      cp "/tmp/protheus/TTTM120.RPO" /totvs/protheus/rpo/tttp120.rpo; \
+    fi
+
+# Copiar serviços de Broker e Secundários (Lock Server, descontinuado após 12.1.2210)
+RUN echo "Configurando serviços..." && \
+    if [ -d "/totvs/protheus/bin/appbroker" ] && [ -d "/totvs/protheus/bin/appsec01" ]; then \
+      cp -rf /totvs/protheus/bin/appbroker/* /totvs/protheus/bin/appsec01/ 2>/dev/null || true && \
+      cp -rf /totvs/protheus/bin/appbroker/* /totvs/protheus/bin/appsec02/ 2>/dev/null || true; \
+    fi
+
+# Limpeza de arquivos temporários
+RUN echo "Limpando arquivos temporários..." && \
+    rm -rf /tmp/protheus && \
     rm -f protheus.zip && \
-    cd protheus && \
-    rm -f *.tar.gz *.TAR.GZ *.zip *.ZIP && \
-    cd /app && \
-    echo "Extração completa!" && \
-    echo "Estrutura final:" && \
-    ls -lh protheus
+    echo "Extração completa!"
 
 # Copiar script de inicialização
 COPY start.sh /usr/local/bin/start.sh
