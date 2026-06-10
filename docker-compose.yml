@@ -13,6 +13,10 @@ services:
       - "80:80"
       - "443:443"
       - "3000:3000"  # Porta padrão de desenvolvimento
+      - "9000:9000"  # Protheus Broker
+      - "8000-8010:8000-8010"  # AppServers (sec01, sec02, etc)
+      - "7000:7000"  # DBAccess
+      - "6000:6000"  # License Server
     
     # Volumes
     volumes:
@@ -21,6 +25,8 @@ services:
       - ./logs:/app/logs
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+      - /var/run:/var/run  # Para arquivos PID dos serviços
+      - /var/lock:/var/lock  # Para lock files dos serviços
     
     # Variáveis de ambiente
     environment:
@@ -55,13 +61,15 @@ services:
         max-size: "10m"
         max-file: "3"
     
-    # Segurança
+    # Segurança (permitindo capacidades necessárias para serviços Protheus)
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
     cap_add:
       - NET_BIND_SERVICE
+      - SYS_PTRACE  # Necessário para monitorar processos
+      - DAC_OVERRIDE  # Necessário para criar/modificar arquivos em /var/run e /var/lock
 
 networks:
   app-network:

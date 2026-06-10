@@ -1,0 +1,235 @@
+#!/bin/bash
+#
+# Script de inicialização dos arquivos de configuração Protheus
+# Cria/atualiza os arquivos .ini necessários para cada serviço
+#
+
+set -e
+
+# Cores
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+echo -e "${BLUE}[INFO]${NC} Configurando arquivos .ini dos serviços Protheus..."
+
+# Diretórios
+APPBROKER_DIR="/totvs/protheus/bin/protheus_broker"
+APPSEC01_DIR="/totvs/protheus/bin/protheus_sec01"
+APPSEC02_DIR="/totvs/protheus/bin/protheus_sec02"
+DBACCESS_DIR="/totvs/protheus/bin/dbaccess/multi"
+LICENSESERVER_DIR="/totvs/licenseserver/bin/appserver"
+ADVPL_CONFIG_DIR="/app/advpl_config"
+
+# Criar diretórios se não existirem
+mkdir -p "$APPBROKER_DIR"
+mkdir -p "$APPSEC01_DIR"
+mkdir -p "$APPSEC02_DIR"
+mkdir -p "$DBACCESS_DIR"
+mkdir -p "$LICENSESERVER_DIR"
+
+# Funções para criar configurações padrão
+
+create_appserver_ini() {
+    local dir=$1
+    local name=$2
+    local port=$3
+    local ini_file="$dir/appserver.ini"
+    
+    # Não sobrescrever se arquivo já existe
+    if [ -f "$ini_file" ]; then
+        echo -e "${BLUE}[INFO]${NC} Arquivo já existe: $ini_file"
+        return
+    fi
+    
+    echo -e "${BLUE}[INFO]${NC} Criando $ini_file..."
+    cat > "$ini_file" << EOF
+[General]
+Application=SIGAFAT
+Server=SIGAMAT
+Startup=
+StartupAccess=
+Repository=${dir}/../../../rpo/tttp120.rpo
+SecurityPolicy=0
+MaxUsers=10
+MaxStaticInstances=10
+LocalFiles=.\
+LogLevel=2
+ConsoleFile=/app/logs/protheus/${name}.log
+
+[Environment]
+Path=${dir}
+Library=${dir}
+System=/app/totvs/protheus_data/system/
+Systemload=/app/totvs/protheus_data/systemload/
+
+[TCP]
+PortNumber=$port
+MaxConnections=100
+
+[RPC]
+Active=1
+Port=$((port + 1000))
+
+[WebServices]
+Active=0
+
+EOF
+    echo -e "${GREEN}[SUCCESS]${NC} Arquivo criado: $ini_file"
+}
+
+create_broker_ini() {
+    local dir=$1
+    local ini_file="$dir/appsrvlinux_broker.ini"
+    
+    # Não sobrescrever se arquivo já existe
+    if [ -f "$ini_file" ]; then
+        echo -e "${BLUE}[INFO]${NC} Arquivo já existe: $ini_file"
+        return
+    fi
+    
+    echo -e "${BLUE}[INFO]${NC} Criando $ini_file..."
+    cat > "$ini_file" << EOF
+[General]
+Application=SIGAFAT
+Server=SIGAMAT
+Repository=${dir}/../../../rpo/tttp120.rpo
+MaxUsers=50
+LogLevel=2
+ConsoleFile=/app/logs/protheus/broker.log
+
+[Environment]
+Path=${dir}
+Library=${dir}
+System=/app/totvs/protheus_data/system/
+Systemload=/app/totvs/protheus_data/systemload/
+
+[Broker]
+PortNumber=9000
+MaxConnections=100
+BalanceType=balance_smart_client_desktop
+
+[TCP]
+PortNumber=9000
+
+EOF
+    echo -e "${GREEN}[SUCCESS]${NC} Arquivo criado: $ini_file"
+}
+
+create_dbaccess_ini() {
+    local dir=$1
+    local ini_file="$dir/dbaccess.ini"
+    
+    # Não sobrescrever se arquivo já existe
+    if [ -f "$ini_file" ]; then
+        echo -e "${BLUE}[INFO]${NC} Arquivo já existe: $ini_file"
+        return
+    fi
+    
+    echo -e "${BLUE}[INFO]${NC} Criando $ini_file..."
+    cat > "$ini_file" << EOF
+[General]
+Application=SIGAFAT
+Server=SIGAMAT
+MaxUsers=10
+LogLevel=2
+ConsoleFile=/app/logs/protheus/dbaccess.log
+
+[Environment]
+Path=${dir}
+Library=${dir}
+System=/app/totvs/protheus_data/system/
+Systemload=/app/totvs/protheus_data/systemload/
+
+[TCP]
+PortNumber=7000
+MaxConnections=100
+
+[Database]
+Type=TopConnect
+ConnectionTimeout=30
+
+EOF
+    echo -e "${GREEN}[SUCCESS]${NC} Arquivo criado: $ini_file"
+}
+
+create_licensesrv_ini() {
+    local dir=$1
+    local ini_file="$dir/appserver.ini"
+    
+    # Não sobrescrever se arquivo já existe
+    if [ -f "$ini_file" ]; then
+        echo -e "${BLUE}[INFO]${NC} Arquivo já existe: $ini_file"
+        return
+    fi
+    
+    echo -e "${BLUE}[INFO]${NC} Criando $ini_file..."
+    cat > "$ini_file" << EOF
+[General]
+Application=License
+MaxUsers=999
+LogLevel=2
+ConsoleFile=/app/logs/protheus/licensesrv.log
+
+[Environment]
+Path=${dir}
+Library=${dir}
+
+[TCP]
+PortNumber=6000
+MaxConnections=100
+
+EOF
+    echo -e "${GREEN}[SUCCESS]${NC} Arquivo criado: $ini_file"
+}
+
+# Criar as configurações
+echo ""
+
+# Primeiro: Copiar configurações customizadas do /app/advpl_config se existirem
+if [ -d "$ADVPL_CONFIG_DIR" ]; then
+    echo -e "${BLUE}[INFO]${NC} Aplicando configurações customizadas de $ADVPL_CONFIG_DIR..."
+    echo ""
+    
+    # Copiar appserver.ini para SEC01 e SEC02
+    if [ -f "$ADVPL_CONFIG_DIR/appserver.ini" ]; then
+        echo -e "${BLUE}[INFO]${NC} Copiando appserver.ini para SEC01..."
+        cp "$ADVPL_CONFIG_DIR/appserver.ini" "$APPSEC01_DIR/appserver.ini"
+        echo -e "${GREEN}[SUCCESS]${NC} Arquivo copiado: $APPSEC01_DIR/appserver.ini"
+        
+        echo -e "${BLUE}[INFO]${NC} Copiando appserver.ini para SEC02..."
+        cp "$ADVPL_CONFIG_DIR/appserver.ini" "$APPSEC02_DIR/appserver.ini"
+        echo -e "${GREEN}[SUCCESS]${NC} Arquivo copiado: $APPSEC02_DIR/appserver.ini"
+    fi
+    
+    # Copiar broker.ini para Broker
+    if [ -f "$ADVPL_CONFIG_DIR/broker.ini" ]; then
+        echo -e "${BLUE}[INFO]${NC} Copiando broker.ini para Broker..."
+        cp "$ADVPL_CONFIG_DIR/broker.ini" "$APPBROKER_DIR/appsrvlinux_broker.ini"
+        echo -e "${GREEN}[SUCCESS]${NC} Arquivo copiado: $APPBROKER_DIR/appsrvlinux_broker.ini"
+    fi
+    
+    # Copiar dbaccess.ini para DBAccess
+    if [ -f "$ADVPL_CONFIG_DIR/dbaccess.ini" ]; then
+        echo -e "${BLUE}[INFO]${NC} Copiando dbaccess.ini para DBAccess..."
+        cp "$ADVPL_CONFIG_DIR/dbaccess.ini" "$DBACCESS_DIR/dbaccess.ini"
+        echo -e "${GREEN}[SUCCESS]${NC} Arquivo copiado: $DBACCESS_DIR/dbaccess.ini"
+    fi
+    
+    echo ""
+fi
+
+# Segundo: Criar configurações padrão para arquivos que ainda não existem
+create_appserver_ini "$APPBROKER_DIR" "appbroker" "9000"
+create_appserver_ini "$APPSEC01_DIR" "appsec01" "8001"
+create_appserver_ini "$APPSEC02_DIR" "appsec02" "8002"
+create_broker_ini "$APPBROKER_DIR"
+create_dbaccess_ini "$DBACCESS_DIR"
+create_licensesrv_ini "$LICENSESERVER_DIR"
+
+echo ""
+echo -e "${GREEN}[SUCCESS]${NC} Configuração dos arquivos .ini concluída!"
+echo ""
+
+exit 0

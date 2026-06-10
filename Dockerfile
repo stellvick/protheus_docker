@@ -206,9 +206,18 @@ RUN echo "" && \
     echo "Limpeza concluída!" && \
     echo "========== FIM RESUMO =========="
 
-# Copiar script de inicialização
+# Copiar scripts de serviços e inicialização
+COPY advpl_config/ /app/advpl_config/
+COPY advpl_scripts/totvs* /usr/local/bin/
+COPY setup-permissions.sh /usr/local/bin/setup-permissions.sh
+COPY setup-config.sh /usr/local/bin/setup-config.sh
 COPY start.sh /usr/local/bin/start.sh
-RUN chmod +x /usr/local/bin/start.sh
+COPY init-services.sh /usr/local/bin/init-services.sh
+RUN chmod +x /usr/local/bin/setup-permissions.sh /usr/local/bin/setup-config.sh /usr/local/bin/start.sh /usr/local/bin/init-services.sh /usr/local/bin/totvs*
+
+# Executar setup de permissões e configurações
+RUN /usr/local/bin/setup-permissions.sh && \
+    /usr/local/bin/setup-config.sh
 
 # Expor porta padrão
 EXPOSE 3000
