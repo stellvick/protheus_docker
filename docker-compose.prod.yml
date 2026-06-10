@@ -26,13 +26,6 @@ services:
       - NODE_ENV=production
       - LOG_LEVEL=info
     
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    
     restart: always
     
     deploy:
@@ -83,17 +76,9 @@ services:
       - ./ssl/private:/etc/nginx/private:ro
     
     depends_on:
-      app:
-        condition: service_healthy
+      - app
     
     restart: always
-    
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
     
     deploy:
       resources:
