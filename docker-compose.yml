@@ -35,6 +35,11 @@ services:
       - ODBCINI=/etc/unixODBC/odbc.ini
       - ODBCSYSINI=/etc/unixODBC
       - LD_LIBRARY_PATH=/usr/lib64:$LD_LIBRARY_PATH
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=tpprd
+      - DB_USER=tpprd
+      - DB_PASSWORD=123456
     
     # Configuração de saúde
     healthcheck:
@@ -74,9 +79,12 @@ services:
       - SYS_PTRACE  # Necessário para monitorar processos
       - DAC_OVERRIDE  # Necessário para criar/modificar arquivos em /var/run e /var/lock
     
-    # Dependências de rede
+    networks:
+      - app-network
+    
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   # PostgreSQL para Protheus
   postgres:
@@ -106,6 +114,9 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    
+    networks:
+      - app-network
     
     logging:
       driver: "json-file"
