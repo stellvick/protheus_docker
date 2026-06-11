@@ -317,6 +317,43 @@ create_broker_ini "$APPBROKER_DIR"
 create_dbaccess_ini "$DBACCESS_DIR"
 create_licensesrv_ini "$LICENSESERVER_DIR"
 
+configure_odbc_ini() {
+    local ini_file="/etc/unixODBC/odbc.ini"
+    local db_host="${DB_HOST:-postgres}"
+    local db_port="${DB_PORT:-5432}"
+    local db_name="${DB_NAME:-tpprd}"
+    local db_user="${DB_USER:-tpprd}"
+    local db_pass="${DB_PASSWORD:-123456}"
+    
+    mkdir -p /etc/unixODBC
+    cat > "$ini_file" << EOF
+[tpprd]
+Description=Protheus TPPRD Database Connection
+Driver=PostgreSQL
+Trace=Yes
+TraceFile=/tmp/protheus/odbc_trace.log
+ServerName=$db_host
+Database=$db_name
+Port=$db_port
+UserName=$db_user
+Password=$db_pass
+
+[protheus]
+Description=Protheus Database Connection
+Driver=PostgreSQL
+Trace=Yes
+TraceFile=/tmp/protheus/odbc_trace.log
+ServerName=$db_host
+Database=$db_name
+Port=$db_port
+UserName=$db_user
+Password=$db_pass
+EOF
+    chmod 644 "$ini_file"
+}
+
+configure_odbc_ini
+
 echo ""
 echo -e "${GREEN}[SUCCESS]${NC} Configuração dos arquivos .ini concluída!"
 echo ""
