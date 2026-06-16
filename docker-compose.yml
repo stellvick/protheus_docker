@@ -1,58 +1,41 @@
-version: '3.8'
-
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    image: opensuse-leap:15.4
-    container_name: opensuse-leap-app
-    
-    # Configuração de rede
+      args:
+        PROTHEUS_GDRIVE_ID: ${PROTHEUS_GDRIVE_ID:-1G6aAGlfbAbLv2u8MicoSzjuCdrYJfvf8}
+
     ports:
-      - "80:80"
-      - "443:443"
-      - "3000:3000"  # Porta padrão de desenvolvimento
-      - "9000:9000"  # Protheus Broker
-      - "8000-8010:8000-8010"  # AppServers (sec01, sec02, etc)
-      - "7000:7000"  # DBAccess
-      - "6000:6000"  # License Server
-    
-    # Volumes
+      - "3000:3000"
+      - "9000:9000"
+      - "8000-8010:8000-8010"
+      - "7000:7000"
+      - "6000:6000"
+
     volumes:
       - ./data:/app/data
-      - ./ssl:/app/ssl:ro  # Para certificados SSL/TLS
-      - ./logs:/app/logs
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
-      - /var/run:/var/run  # Para arquivos PID dos serviços
-      - /var/lock:/var/lock  # Para lock files dos serviços
-    
-    # Variáveis de ambiente
+      - ./logs:/app/totvs/protheus/bin/log
+
     environment:
-      - TZ=America/Sao_Paulo
-      - NODE_ENV=production
+      - TZ=${TZ:-America/Sao_Paulo}
+      - DB_HOST=${DB_HOST:-postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-tpprd}
+      - DB_USER=${DB_USER:-tpprd}
+      - DB_PASSWORD=${DB_PASSWORD:-123456}
       - ODBCINI=/etc/unixODBC/odbc.ini
       - ODBCSYSINI=/etc/unixODBC
-      - LD_LIBRARY_PATH=/usr/lib64:$LD_LIBRARY_PATH
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT}
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-    
-    # Configuração de saúde
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
-    
-    # Reinicialização automática
+      start_period: 60s
+
     restart: unless-stopped
-    
-    # Limites de recurso (opcional)
+
     deploy:
       resources:
         limits:
@@ -61,31 +44,57 @@ services:
         reservations:
           cpus: '1'
           memory: 1G
-    
-    # Logging
+
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
-    
-    # Segurança (permitindo capacidades necessárias para serviços Protheus)
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-      - SYS_PTRACE  # Necessário para monitorar processos
-      - DAC_OVERRIDE  # Necessário para criar/modificar arquivos em /var/run e /var/lock
-    
+
     networks:
       - app-network
-      - coolify-postgres
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:15-alpine
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-tpprd}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-123456}
+      POSTGRES_DB: ${POSTGRES_DB:-tpprd}
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=pt_BR.UTF-8"
+      TZ: ${TZ:-America/Sao_Paulo}
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tpprd} -d ${POSTGRES_DB:-tpprd}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    networks:
+      - app-network
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
   app-network:
     driver: bridge
-  coolify-postgres:
-    external: true
-    name: fwsk8wk8wg44s00wsssgkgco
+
+volumes:
+  postgres_data:
