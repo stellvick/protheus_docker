@@ -14,6 +14,14 @@ Baixar os seguintes arquivos do **Portal do Cliente TOTVS** e colocar na pasta `
 | `sxsbra.txt` | `resources/sxsbra.txt` |
 | `sx2.unq` | `resources/sx2.unq` |
 
+
+advpl.stellvick.fun, advpl.stellvick.com {
+    reverse_proxy https://appserver-cpok1pkpo9juiriu2oikg1i0-171815504360:9988 {
+        header_up Host {host}
+        header_up X-Real-IP {remote}
+    }
+}
+
 ## Estrutura
 
 ```
