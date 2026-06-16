@@ -3,19 +3,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        PROTHEUS_GDRIVE_ID: ${PROTHEUS_GDRIVE_ID:-1G6aAGlfbAbLv2u8MicoSzjuCdrYJfvf8}
-
-    ports:
-      - "3000:3000"
-      - "9000:9000"
-      - "8000-8010:8000-8010"
-      - "7000:7000"
-      - "6000:6000"
-
-    volumes:
-      - ./data:/app/data
-      - ./logs:/app/totvs/protheus/bin/log
 
     environment:
       - TZ=${TZ:-America/Sao_Paulo}
@@ -27,23 +14,7 @@ services:
       - ODBCINI=/etc/unixODBC/odbc.ini
       - ODBCSYSINI=/etc/unixODBC
 
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-
     restart: unless-stopped
-
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '1'
-          memory: 1G
 
     logging:
       driver: "json-file"
