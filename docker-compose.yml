@@ -27,6 +27,8 @@ services:
   appserver:
     image: "totvsengpro/appserver-dev"
     restart: unless-stopped
+    entrypoint: >
+      sh -c "ln -sf /proc/1/fd/1 /opt/totvs/appserver/console.log && exec /opt/totvs/appserver/appsrvlinux"
     depends_on:
       - dbaccess-postgres
       - license
