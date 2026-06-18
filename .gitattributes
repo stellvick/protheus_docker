@@ -2,4 +2,4 @@ resources/hlpspa.txt filter=lfs diff=lfs merge=lfs -text
 resources/hlpeng.txt filter=lfs diff=lfs merge=lfs -text
 resources/hlppor.txt filter=lfs diff=lfs merge=lfs -text
 resources/TTTM120.RPO filter=lfs diff=lfs merge=lfs -text
-resources/sdfbra.txt filter=lfs diff=lfs merge=lfs -text
+resources/sxsbra.txt filter=lfs diff=lfs merge=lfs -text
