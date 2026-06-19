@@ -1,6 +1,8 @@
 services:
   license:
-    image: "totvsengpro/license-dev"
+    build:
+      context: .
+      dockerfile: license.Dockerfile
     restart: unless-stopped
     networks:
       - protheus-net
@@ -12,7 +14,9 @@ services:
           memory: 256M
 
   postgres-iniciado:
-    image: "totvsengpro/postgres-dev:12.1.2210_bra"
+    build:
+      context: .
+      dockerfile: postgres.Dockerfile
     restart: unless-stopped
     environment:
       - POSTGRES_PASSWORD=postgres

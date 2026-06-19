@@ -1,4 +1,4 @@
-FROM totvsengpro/dbaccess-postgres-dev
+FROM totvsengpro/license-dev
 USER root
 RUN if [ -x "$(command -v apt-get)" ]; then \
       apt-get update && apt-get install -y dmidecode; \
@@ -11,4 +11,3 @@ RUN if [ -x "$(command -v apt-get)" ]; then \
     elif [ -x "$(command -v zypper)" ]; then \
       zypper install -y dmidecode; \
     fi
-COPY resources/dbaccess.ini /opt/totvs/dbaccess/multi/dbaccess.ini
