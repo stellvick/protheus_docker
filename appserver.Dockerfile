@@ -16,7 +16,7 @@ COPY resources/TTTM120.RPO /opt/totvs/protheus/apo/tttm120.rpo
 COPY resources/sx2.unq /opt/totvs/protheus/protheus_data/systemload/sx2.unq
 COPY resources/sxsbra.txt /opt/totvs/protheus/protheus_data/systemload/sxsbra.txt
 
-COPY entrypoint.sh /opt/totvs/appserver/entrypoint.sh
-RUN chmod +x /opt/totvs/appserver/entrypoint.sh
-ENTRYPOINT ["/opt/totvs/appserver/entrypoint.sh"]
+COPY resources/language.ini /opt/totvs/appserver/language.ini
+RUN chmod 666 /opt/totvs/appserver/language.ini
+
 
