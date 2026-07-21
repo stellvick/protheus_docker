@@ -4,6 +4,8 @@ services:
       context: .
       dockerfile: license.Dockerfile
     restart: unless-stopped
+    volumes:
+      - /sys/firmware/dmi/tables:/sys/firmware/dmi/tables:ro
     networks:
       - protheus-net
     deploy:
@@ -23,6 +25,7 @@ services:
       - POSTGRES_DB=protheus
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - /sys/firmware/dmi/tables:/sys/firmware/dmi/tables:ro
     networks:
       - protheus-net
     deploy:
@@ -40,6 +43,8 @@ services:
     depends_on:
       - postgres-iniciado
       - license
+    volumes:
+      - /sys/firmware/dmi/tables:/sys/firmware/dmi/tables:ro
     networks:
       - protheus-net
     deploy:
@@ -61,6 +66,8 @@ services:
       - "1234:1234"
       - "8080:8080"
       - "8081:8081"
+    volumes:
+      - /sys/firmware/dmi/tables:/sys/firmware/dmi/tables:ro
     networks:
       - protheus-net
     deploy:
