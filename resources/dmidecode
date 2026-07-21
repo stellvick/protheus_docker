@@ -1,0 +1,25 @@
+#!/bin/sh
+case "$*" in
+  *system-uuid*)
+    echo "12345678-abcd-1234-abcd-123456789abc"
+    ;;
+  *system-serial-number*)
+    echo "1234-5678-9012"
+    ;;
+  *)
+    echo "# dmidecode 3.3"
+    echo "Getting SMBIOS data from sysfs."
+    echo "SMBIOS 2.8 present."
+    echo ""
+    echo "Handle 0x0001, DMI type 1, 27 bytes"
+    echo "System Information"
+    echo "	Manufacturer: TOTVS DEV"
+    echo "	Product Name: TOTVS Protheus Virtual Server"
+    echo "	Version: 1.0"
+    echo "	Serial Number: 1234-5678-9012"
+    echo "	UUID: 12345678-abcd-1234-abcd-123456789abc"
+    echo "	Wake-up Type: Power Switch"
+    echo "	SKU Number: Not Specified"
+    echo "	Family: Not Specified"
+    ;;
+esac
