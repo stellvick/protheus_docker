@@ -62,16 +62,16 @@ services:
       - "8080:8080"
       - "8081:8081"
     environment:
-      - SERVICE_URL_PROTHEUS=https://protheus.stellvick.fun
-      - SERVICE_FQDN_PROTHEUS=protheus.stellvick.fun
-      - SERVICE_URL_PROTHEUS_5800=https://protheus.stellvick.fun:5800
-      - SERVICE_FQDN_PROTHEUS_5800=protheus.stellvick.fun:5800
-      - SERVICE_URL_PROTHEUS_1234=https://protheus.stellvick.fun:1234
-      - SERVICE_FQDN_PROTHEUS_1234=protheus.stellvick.fun:1234
-      - SERVICE_URL_PROTHEUS_8080=https://protheus.stellvick.fun:8080
-      - SERVICE_FQDN_PROTHEUS_8080=protheus.stellvick.fun:8080
-      - SERVICE_URL_PROTHEUS_8081=https://protheus.stellvick.fun:8081
-      - SERVICE_FQDN_PROTHEUS_8081=protheus.stellvick.fun:8081
+      - SERVICE_URL_APPSERVER=https://protheus.stellvick.fun
+      - SERVICE_FQDN_APPSERVER=protheus.stellvick.fun
+      - SERVICE_URL_APPSERVER_5800=https://protheus.stellvick.fun:5800
+      - SERVICE_FQDN_APPSERVER_5800=protheus.stellvick.fun:5800
+      - SERVICE_URL_APPSERVER_1234=https://protheus.stellvick.fun:1234
+      - SERVICE_FQDN_APPSERVER_1234=protheus.stellvick.fun:1234
+      - SERVICE_URL_APPSERVER_8080=https://protheus.stellvick.fun:8080
+      - SERVICE_FQDN_APPSERVER_8080=protheus.stellvick.fun:8080
+      - SERVICE_URL_APPSERVER_8081=https://protheus.stellvick.fun:8081
+      - SERVICE_FQDN_APPSERVER_8081=protheus.stellvick.fun:8081
     networks:
       - protheus-net
     deploy:
