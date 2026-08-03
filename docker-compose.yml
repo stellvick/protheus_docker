@@ -61,6 +61,17 @@ services:
       - "1234:1234"
       - "8080:8080"
       - "8081:8081"
+    environment:
+      - SERVICE_URL_PROTHEUS=https://protheus.stellvick.fun
+      - SERVICE_FQDN_PROTHEUS=protheus.stellvick.fun
+      - SERVICE_URL_PROTHEUS_5800=https://protheus.stellvick.fun:5800
+      - SERVICE_FQDN_PROTHEUS_5800=protheus.stellvick.fun:5800
+      - SERVICE_URL_PROTHEUS_1234=https://protheus.stellvick.fun:1234
+      - SERVICE_FQDN_PROTHEUS_1234=protheus.stellvick.fun:1234
+      - SERVICE_URL_PROTHEUS_8080=https://protheus.stellvick.fun:8080
+      - SERVICE_FQDN_PROTHEUS_8080=protheus.stellvick.fun:8080
+      - SERVICE_URL_PROTHEUS_8081=https://protheus.stellvick.fun:8081
+      - SERVICE_FQDN_PROTHEUS_8081=protheus.stellvick.fun:8081
     networks:
       - protheus-net
     deploy:
@@ -74,8 +85,38 @@ services:
         soft: 65535
         hard: 65535
 
+  firefox:
+    image: jlesage/firefox
+    restart: unless-stopped
+    ports:
+      - "5800:5800"
+    environment:
+      - SERVICE_URL_FIREFOX=https://web.stellvick.fun
+      - SERVICE_FQDN_FIREFOX=web.stellvick.fun
+      - SERVICE_URL_FIREFOX_5800=https://web.stellvick.fun:5800
+      - SERVICE_FQDN_FIREFOX_5800=web.stellvick.fun:5800
+      - DARK_MODE=1
+      - WEB_AUDIO=1
+      - SECURE_CONNECTION_VNC_METHOD=1
+      - VNC_PASSWORD=123456
+    volumes:
+      - 'firefox_config:/config'
+    networks:
+      - protheus-net
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - '-q'
+        - '--spider'
+        - 'http://127.0.0.1:5800/'
+      interval: 5s
+      timeout: 20s
+      retries: 10
+
 volumes:
   postgres-data:
+  firefox_config:
 
 networks:
   protheus-net:
