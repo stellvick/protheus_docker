@@ -1,67 +1,222 @@
-# Protheus Docker - Coolify
+# Protheus Docker — Coolify
 
-Ambiente Docker Compose do Protheus para deploy no Coolify.
+Ambiente **Protheus 12.1.2510** de desenvolvimento e teste, como **Docker
+Compose** no Coolify.
 
-**As imagens são para uso estritamente de desenvolvimento e não são homologadas para ambientes de produção.**
+> **As imagens são para uso estritamente de desenvolvimento e não são
+> homologadas para ambientes de produção.** — documentação TOTVS
+
+---
+
+## Como este branch difere do `main`
+
+O `main` constrói imagens e tenta carregar os artefatos licenciados **dentro do
+repositório**, via Git LFS. Este branch mantém a construção das imagens — pela
+mesma razão que ela existe — mas tira os artefatos do Git.
+
+| | `main` | este branch |
+|---|---|---|
+| Imagens | derivadas por `Dockerfile` | derivadas por `Dockerfile` |
+| `dmidecode` falso (licença) | sim | **sim, mantido** |
+| Artefatos licenciados | no Git, via LFS | **fora do Git**, no host |
+| RPO / dicionário | ponteiros LFS | arquivos reais, baixados do Drive |
+| `appserver.ini` | copiado para a imagem | gerado em runtime |
+| `specialkey` | `exemplo`, versionado | variável do Coolify |
+| Criação de banco | implícita (`POSTGRES_DB`, inerte) | conferida no start |
+| Tags das imagens | `latest` + `12.1.2210_bra` | **fixadas**, `12.1.2510_bra` |
+
+**Por que os artefatos saíram do Git.** No `main`, `resources/TTTM120.RPO`,
+`resources/sxsbra.txt` e `resources/hlp*.txt` estão versionados como ponteiros
+LFS de **134 bytes** — um RPO de verdade tem 606 MB. O build consome um arquivo
+vazio. E não há saída dentro do Git: ele recusa arquivos acima de 100 MB, e o LFS
+gratuito dá 1 GB de armazenamento contra os ~1,2 GB do conjunto.
+
+**Por que as imagens continuam sendo construídas.** Por causa do
+`resources/dmidecode`. A licença do Protheus se vincula a identificadores de
+hardware (UUID e serial do sistema), que num container vêm do host e variam de
+máquina para máquina. O mock devolve valores fixos. Essa solução já estava
+validada aqui e é a peça que faz a licença funcionar.
+
+---
+
+## O que vem de onde
+
+Tudo o que o Drive tem, o Drive fornece. Nada é copiado à mão.
+
+| Arquivo | Origem | Vai para |
+|---|---|---|
+| `tttm120.rpo` (606 MB) | Drive | `/srv/protheus/apo/` |
+| `sxsbra.txt` (592 MB) | Drive | `/srv/protheus/systemload/` |
+| `sx2.unq` (80 KB) | dentro de `DICIONARIOS_DIF.zip` | `/srv/protheus/systemload/` |
+| 69 × `.xnu` | dentro de `MENUS.zip` | `/srv/protheus/system/` |
+| `hlp{por,eng,spa}.txt` | dentro de `HELPS_COMPL.zip` | `/srv/protheus/systemload/` |
+
+O `sdfbra.txt` (287 MB, dentro do mesmo zip do `sx2.unq`) **não é baixado**: é
+dicionário **diferencial**, para atualizar dicionário existente, não para montar
+ambiente novo.
+
+No container: `sourcepath` → `/opt/totvs/protheus/apo`, e `startpath=/system` é
+**relativo** a `rootpath`, por isso os menus vão em `protheus_data/system`.
+
+---
 
 ## Pré-requisitos
 
-Baixar os seguintes arquivos do **Portal do Cliente TOTVS** e colocar na pasta `resources/`:
+- Host do Coolify em **x86-64** (as quatro imagens são `linux/amd64`, e só).
+- **~1,5 GB livres** para os artefatos.
+- `curl` e (`unzip` ou `python3`) no host.
+- Ajuste de kernel no host — **nenhum compose aplica isto:**
 
-| Arquivo | Destino |
-|---------|---------|
-| `tttm120.rpo` | `resources/tttm120.rpo` |
-| `sxsbra.txt` | `resources/sxsbra.txt` |
-| `sx2.unq` | `resources/sx2.unq` |
+  ```bash
+  echo 32767 > /proc/sys/fs/file-max                                              # até o próximo boot
+  echo 'fs.file-max = 32767' > /etc/sysctl.d/99-protheus.conf && sysctl --system  # permanente
+  ```
 
+---
 
-advpl.stellvick.fun, advpl.stellvick.com {
-    reverse_proxy https://appserver-cpok1pkpo9juiriu2oikg1i0-171815504360:9988 {
-        header_up Host {host}
-        header_up X-Real-IP {remote}
-    }
-}
+## Deploy
 
-## Estrutura
+### 1. Baixar os artefatos no host
+
+```bash
+DATA_DIR=/srv/protheus bash host/01-fetch-artifacts.sh
+```
+
+Baixa os ~1,2 GB direto do Drive e organiza. Testado: ~40 s, e confere no fim.
+
+### 2. Criar o recurso no Coolify
+
+1. **New Resource → Application → Docker Compose** (build pack **Docker Compose**,
+   escolhido na criação — não há troca depois).
+2. Aponte para este repositório e para o branch.
+3. **Environment Variables:**
+
+   | Variável | Valor |
+   |---|---|
+   | `PROTHEUS_SPECIALKEY` | `openssl rand -hex 16` |
+   | `TZ` | `America/Sao_Paulo` (opcional) |
+
+4. **Domains for `appserver`** (o campo aceita várias linhas):
+
+   ```
+   https://protheus.stellvick.fun:8080
+   https://protheus-api.stellvick.fun:8081
+   ```
+
+   O número é a porta **dentro do container**. Duas linhas → dois roteadores:
+   WebApp na 8080, REST na 8081.
+5. **Deploy.**
+
+A ordem de subida é resolvida pelo compose:
 
 ```
-.
-├── docker-compose.yml
-├── README.md
-└── resources/
-    ├── appserver.ini
-    ├── dbaccess.ini
-    ├── tttm120.rpo      (baixar do Portal)
-    ├── sxsbra.txt       (baixar do Portal)
-    └── sx2.unq          (baixar do Portal)
+license + postgres-iniciado  →  initdb (confere o banco)
+    →  seed-config (escreve appserver.ini, language.ini e dbaccess.ini)
+        →  dbaccess-postgres + appserver
 ```
+
+`initdb` e `seed-config` saem com código 0 e ficam parados — é o esperado. Por
+isso carregam `exclude_from_hc: true`: sem isso o Coolify poderia marcar o
+recurso inteiro como doente por causa de dois containers que terminaram bem.
+
+### 3. Verificar
+
+```bash
+bash host/99-verify.sh https://protheus.stellvick.fun https://protheus-api.stellvick.fun
+```
+
+Testa contra os containers reais: estados, banco, `isql` pelo alias `protheus`,
+porta 1234, WebApp e `/rest`. Esperado no REST: **401 ou 403**, não 200 —
+`[HTTPREST] SECURITY=1` faz o endpoint vivo recusar quem chega sem credencial.
+
+### 4. Apontar o TDS
+
+No assistente *Add Server* do `TOTVS.tds-vscode`: **address** = IP/host do
+servidor, **port** = `1234`.
+
+---
 
 ## Serviços
 
 | Serviço | Imagem | Porta |
-|---------|--------|-------|
-| license | totvsengpro/license-dev | - |
-| postgres-iniciado | totvsengpro/postgres-dev:12.1.2210_bra | - |
-| dbaccess-postgres | totvsengpro/dbaccess-postgres-dev | - |
-| appserver | totvsengpro/appserver-dev | 1234, 8080, 8081 |
+|---|---|---|
+| `license` | `totvsengpro/license-dev:3.7.0` | interna, 5555 |
+| `postgres-iniciado` | `totvsengpro/postgres-dev:12.1.2510_bra` | interna, 5432 |
+| `initdb` | one-shot | — |
+| `seed-config` | one-shot | — |
+| `dbaccess-postgres` | `totvsengpro/dbaccess-postgres-dev:24.1.1.0` | interna, 7890 |
+| `appserver` | `totvsengpro/appserver-dev:24.3.1.1` | **1234 publicada**, 8080/8081 pelo domínio |
 
-## Deploy no Coolify
+---
 
-1. Criar um novo recurso do tipo **Docker Compose** no Coolify
-2. Apontar para o repositório Git deste projeto
-3. Garantir que os arquivos RPO e dicionários estejam na pasta `resources/`
-4. Fazer deploy
+## Fatos verificados (não supostos)
 
-## Portas
+Todos lidos **de dentro das imagens**, não da documentação:
 
-- **1234**: AppServer TCP (conexão SmartClient)
-- **8080**: WebApp (acesso web)
-- **8081**: REST API
+- **O banco `protheus` já existe, em WIN1252.** Li o catálogo `pg_database`
+  (`global/1262`) da imagem: `datdba=10`, `encoding=24` (WIN1252), `connlimit=-1`.
+  É por isso que `initdb` confere em vez de criar — e por isso as variáveis
+  `POSTGRES_PASSWORD`/`POSTGRES_DB` do `main` são inertes: o cluster vem
+  pré-inicializado e o `docker-entrypoint` pula o `initdb`.
+- **A senha do superusuário é `postgres`**, provada comparando o verificador
+  SCRAM-SHA-256 de `global/1260` (`pg_authid`) com a chave derivada do candidato.
+  Bate byte a byte.
+- **A imagem do AppServer já traz o `webapp.so`** e as pastas `apo/`,
+  `systemload/` e `system/` **vazias** — exatamente os três pontos que o bind
+  mount do host preenche.
+- **As quatro imagens são `linux/amd64`**, e só.
+- **`dbaccess-postgres-dev` traz `/usr/lib64/libodbc.so` e `/usr/bin/isql`** —
+  o caminho que o `dbaccesscfg` recebe em `-c` existe mesmo.
 
-## Host Debian/Ubuntu
+---
 
-Caso o host utilize distribuição baseada em Debian/Ubuntu, alterar a variável de kernel:
+## Segredos
+
+- `PROTHEUS_SPECIALKEY` — variável do Coolify, única credencial configurável.
+- **Não há senha de banco configurável**, e é deliberado: o cluster já vem
+  pronto, com o par `postgres`/`postgres` documentado pelo fabricante e
+  verificado acima. A porta 5432 é interna ao recurso.
+- `dbaccess.ini` é **gerado** pelo `dbaccesscfg` que vive na própria imagem, com
+  a senha criptografada como o fabricante especifica. Um arquivo escrito à mão
+  pode funcionar — o `main` usa um —, mas gerar é o caminho garantido.
+
+---
+
+## Operação
+
+**Trocar o RPO:**
 
 ```bash
-sudo echo 32767 > /proc/sys/fs/file-max
+cp /caminho/novo/TTTM120.RPO /srv/protheus/apo/tttm120.rpo
+docker restart $(docker ps -q --filter label=com.docker.compose.service=appserver)
 ```
+
+Nada é reconstruído: `apo/` é bind mount, e o `appserver.ini` existente é
+preservado.
+
+**Recriar a configuração:** apague `/srv/protheus/{appserver,language,dbaccess}.ini`
+e faça Redeploy — o `seed-config` regenera.
+
+**Logs:** `docker exec <id> tail -f /opt/totvs/appserver/console.log`, ou o log de
+deploy do Coolify, onde aparecem as saídas de `initdb` e `seed-config`.
+
+---
+
+## Limites conhecidos
+
+1. **Substituição de variáveis em duas camadas.** O Coolify substitui antes do
+   `docker compose`, que substitui de novo. Se o `$$` não for preservado, o
+   `specialkey` chega vazio. **Conferir** depois do deploy: `grep specialkey
+   /srv/protheus/appserver.ini`. **Eliminar o risco:** crie o arquivo à mão antes
+   do primeiro deploy — o `seed-config` o preserva.
+2. **Licença.** O `license-dev` tráz um MAC fixo (`00:50:56:AC:C8:2B`) no
+   `licenseserver.ini`. O `dmidecode` falso cobre UUID e serial; se a licença
+   ainda recusar, o MAC é o próximo lugar a olhar.
+3. **Versões.** AppServer `24.3.1.1` com License `3.7.0` é o par que a TOTVS
+   publica junto, de outubro/2025. Não usamos os tarballs licenciados do Drive
+   (`appserver 24.3.1.5`, `license 3.7.1`) porque o `TOTVSLICENSE` é um
+   **instalador Java** para `/totvs/totvslicensevirtual`: exigiria JDK no build e
+   um layout impossível de verificar sem executá-lo.
+4. **Porta 1234 exposta.** O AppServer exige autenticação própria, mas a porta
+   exposta é a porta exposta. Restrinja por firewall se puder.
+5. **Não homologado para produção.**
