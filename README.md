@@ -215,6 +215,28 @@ Todos lidos **de dentro das imagens**, não da documentação:
 
 ---
 
+## Conformidade com a release 12.1.2510
+
+A release note oficial **DFRM1-37254** (TDN, *Obrigatoriedade da Porta
+Multiprotocolo*) torna duas chaves **obrigatórias** a partir da 12.1.2510:
+
+```
+Seção [DRIVERS]   MultiProtocolPort=1
+Seção [GENERAL]   app_environment=<nome do ambiente a ser habilitado no REST>
+```
+
+Sem elas o serviço pode recusar acesso com a mensagem *"Porta Multiprotocolo -
+Não foi possível identificar a configuração do ambiente"*.
+
+O `resources/seed-config.sh` gera as duas. **Atenção à seção:** a nota exige
+`app_environment` em `[GENERAL]`. A configuração herdada do `main` trazia a
+chave em `[environment]` — que é outra seção, e não atende o requisito.
+
+Verificado por execução real do script, com um verificador que percorre o INI e
+confere em que seção cada chave caiu — não por leitura.
+
+---
+
 ## Segredos
 
 - `PROTHEUS_SPECIALKEY` — variável do Coolify, única credencial configurável.
@@ -236,11 +258,12 @@ cp /caminho/novo/TTTM120.RPO /srv/protheus/apo/tttm120.rpo
 docker restart $(docker ps -q --filter label=com.docker.compose.service=appserver)
 ```
 
-Nada é reconstruído: `apo/` é bind mount, e o `appserver.ini` existente é
-preservado.
+Nada é reconstruído: `apo/` é bind mount.
 
-**Recriar a configuração:** apague `/srv/protheus/{appserver,language,dbaccess}.ini`
-e faça Redeploy — o `seed-config` regenera.
+**Configuração:** `appserver.ini`, `language.ini` e `dbaccess.ini` são
+**regerados a cada deploy**. Edição manual nesses arquivos se perde — de
+propósito: o repositório é a fonte da verdade. Para mudar configuração, altere
+`resources/seed-config.sh` e faça push.
 
 **Logs:** `docker exec <id> tail -f /opt/totvs/appserver/console.log`, ou o log de
 deploy do Coolify, onde aparecem as saídas de `initdb` e `seed-config`.

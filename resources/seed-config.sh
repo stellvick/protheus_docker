@@ -22,11 +22,14 @@ set -euo pipefail
 cd /seed
 
 # --- appserver.ini -----------------------------------------------------------
-if [ -s appserver.ini ]; then
-  echo "==> [seed-config] appserver.ini já existe — preservado"
-else
-  echo "==> [seed-config] escrevendo appserver.ini"
-  cat > appserver.ini <<INI
+# REGERADO a cada execução, de propósito: o repositório é a fonte da verdade.
+# Um arquivo preservado esconde mudança de configuração — foi exatamente assim
+# que a chave app_environment ficou na seção errada sem ninguém perceber.
+echo "==> [seed-config] escrevendo appserver.ini"
+cat > appserver.ini <<INI
+; GERADO por resources/seed-config.sh — NÃO EDITE À MÃO; a edição se perde.
+; Conformidade com a release 12.1.2510 (TDN DFRM1-37254):
+;   [DRIVERS] MultiProtocolPort=1        [GENERAL] app_environment=<ambiente>
 [environment]
 rpodb=top
 rpoversion=120
@@ -40,7 +43,6 @@ dbalias=protheus
 dbserver=dbaccess-postgres
 dbport=7890
 topmemomega=10
-app_environment=environment
 specialkey=${PROTHEUS_SPECIALKEY}
 
 [general]
@@ -48,6 +50,11 @@ buildkillusers=1
 consolelog=1
 consolefile=/opt/totvs/appserver/console.log
 maxstringsize=10
+; Obrigatorio a partir da release 12.1.2510 (TDN DFRM1-37254): nome do ambiente
+; habilitado no REST. O TDN exige esta chave na secao [GENERAL] — nao em
+; [environment]. Sem ela o servico pode recusar acesso com a mensagem
+; "Porta Multiprotocolo - Nao foi possivel identificar a configuracao do ambiente".
+app_environment=environment
 
 [drivers]
 active=tcp
@@ -97,16 +104,12 @@ URIS=HTTPURI
 MAIN=HTTP_START
 ENVIRONMENT=environment
 INI
-  chmod 0640 appserver.ini
-fi
+chmod 0640 appserver.ini
 
 # --- language.ini ------------------------------------------------------------
-if [ -s language.ini ]; then
-  echo "==> [seed-config] language.ini já existe — preservado"
-else
-  printf '[languageenvironment]\ncurrentlanguage=pt-br\n' > language.ini
-  chmod 0640 language.ini
-fi
+# Regerado pelo mesmo motivo do appserver.ini.
+printf '[languageenvironment]\ncurrentlanguage=pt-br\n' > language.ini
+chmod 0640 language.ini
 
 # --- dbaccess.ini ------------------------------------------------------------
 # -a protheus  == dbalias no appserver.ini == nome do alias
