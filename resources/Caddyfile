@@ -1,0 +1,24 @@
+{
+	# Sem TLS aqui: quem termina o TLS e emite o certificado e o proxy do
+	# Coolify, na frente. Este Caddy fala HTTP puro com o AppServer.
+	auto_https off
+	admin off
+}
+
+# Escuta na 8080 de proposito: e a porta que o Coolify usa para rotear os
+# dominios deste recurso (ports_exposes=8080), entao o dominio
+# protheus-api.stellvick.fun chega aqui sem precisar de configuracao extra.
+:8080 {
+	# Endpoint de healthcheck — o REST do Protheus responde 428 para tudo que
+	# nao traz credencial, o que faria um healthcheck ingenuo reprovar um
+	# servico que esta saudavel.
+	handle /healthz {
+		respond "ok" 200
+	}
+
+	# Passa o caminho INTACTO: o Protheus espera receber /REST/<metodo>.
+	# Um handle_path (que remove o prefixo) quebraria a chamada.
+	handle {
+		reverse_proxy appserver:8081
+	}
+}

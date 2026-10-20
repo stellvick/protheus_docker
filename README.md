@@ -109,22 +109,18 @@ DATA_DIR=/srv/protheus bash resources/fetch-artifacts.sh
    | `TZ` | `America/Sao_Paulo` (opcional) |
    | `FETCH_ARTIFACTS` | `1` (padrão) — `0` desliga o download |
 
-4. **Domains for `appserver`** — uma linha só:
+4. **Domínios** — um por serviço, e são **serviços diferentes**:
 
-   ```
-   https://protheus.stellvick.fun:8080
-   ```
+   | Serviço | Domínio |
+   |---|---|
+   | `appserver` | `https://protheus.stellvick.fun` |
+   | `gateway` | `https://protheus-api.stellvick.fun` |
 
-   O número é a porta **dentro do container**. O domínio serve o **WebApp**.
-
-   O **REST não fica no domínio**: fica na porta 8081 publicada no host, em
-   HTTP puro (ver "Acesso externo" abaixo). Se preferir o REST com TLS, troque
-   esta linha por duas e use dois nomes — o Coolify não distingue duas portas
-   diferentes no mesmo hostname:
-   ```
-   https://protheus.stellvick.fun:8080
-   https://protheus-api.stellvick.fun:8081
-   ```
+   O Coolify **descarta a porta** escrita no valor do domínio e usa o
+   `ports_exposes` do recurso (`8080`) para todos. Como o AppServer serve WebApp
+   e REST em portas diferentes do mesmo container, o REST ganha um serviço
+   próprio: o `gateway`, um Caddy que escuta na 8080 e entrega ao
+   `appserver:8081`. **É isso que dá TLS ao REST.**
 5. **Deploy.**
 
 A ordem de subida é resolvida pelo compose:
@@ -177,6 +173,7 @@ servidor, **port** = `1234`.
 | Endereço | Serve | TLS |
 |---|---|---|
 | `https://protheus.stellvick.fun` | WebApp (container 8080) | **sim**, Let's Encrypt |
+| `https://protheus-api.stellvick.fun` | REST (via `gateway` → 8081) | **sim**, Let's Encrypt |
 | `<host>:8080` | WebApp (container 8080) | não |
 | `<host>:8081` | REST (`/REST`, container 8081) | não |
 | `<host>:1234` | TDS / SmartClient (protocolo binário) | não |

@@ -11,6 +11,11 @@
 # Topologia (nomes dos serviços SÃO os hostnames internos):
 #     appserver -> dbaccess-postgres:7890 -> postgres-iniciado:5432
 #     appserver -> license:5555
+#     gateway:8080 -> appserver:8081
+#         O REST vive na 8081, no MESMO container do WebApp. O Coolify roteia
+#         domínio por serviço e descarta a porta escrita no domínio (usa
+#         ports_exposes), então o proxy dele não alcança uma porta sem a outra.
+#         O gateway dá ao REST um serviço próprio, e com ele o TLS.
 #
 # Ordem de subida, declarativa:
 #     license + postgres-iniciado
@@ -219,6 +224,36 @@ services:
       timeout: 5s
       retries: 12
       start_period: 90s
+
+  gateway:
+    # Dá TLS ao REST.
+    #
+    # O REST escuta na 8081, no mesmo container do WebApp (8080). O Coolify
+    # roteia domínio por SERVIÇO e descarta a porta escrita no valor do domínio
+    # — usa o ports_exposes do recurso. Com as duas portas no mesmo serviço, o
+    # proxy dele não alcança uma sem a outra: um PATCH com "https://host:8081"
+    # é gravado como "https://host", comprovado.
+    #
+    # Este Caddy escuta na 8080 (a porta que o Coolify usa para rotear) e
+    # entrega tudo ao appserver:8081. Assim protheus-api.stellvick.fun chega ao
+    # REST com certificado, e o caminho do WebApp não é tocado.
+    build:
+      context: .
+      dockerfile: gateway.Dockerfile
+    image: protheus-gateway:1
+    restart: unless-stopped
+    depends_on:
+      appserver:
+        condition: service_started
+    healthcheck:
+      # /healthz é servido pelo próprio Caddy. Apontar o healthcheck para o REST
+      # reprovaria um serviço saudável: o Protheus responde 428 a tudo que não
+      # traz credencial.
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
 volumes:
   protheus_pgdata:
