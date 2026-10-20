@@ -5,10 +5,8 @@
 	admin off
 }
 
-# Escuta na 8080 de proposito: e a porta que o Coolify usa para rotear os
-# dominios deste recurso (ports_exposes=8080), entao o dominio
-# protheus-api.stellvick.fun chega aqui sem precisar de configuracao extra.
-:8080 {
+# Corpo comum, importado pelos dois blocos de porta abaixo.
+(protheus_rest) {
 	# Endpoint de healthcheck — o REST do Protheus responde 428 para tudo que
 	# nao traz credencial, o que faria um healthcheck ingenuo reprovar um
 	# servico que esta saudavel.
@@ -21,4 +19,21 @@
 	handle {
 		reverse_proxy appserver:8081
 	}
+}
+
+# Escuta em DUAS portas de proposito.
+#
+# O proxy do Coolify precisa saber em que porta alcancar este servico, e o
+# criterio dele nao e obvio: para o dominio do appserver ele usa o
+# ports_exposes do recurso (8080). Para este servico, que nao publica porta
+# nenhuma, ele pode cair no padrao 80.
+#
+# Em vez de adivinhar, atendo nas duas — nao custa nada e elimina a duvida:
+# um 502 aqui deixa de poder significar "porta errada".
+:80 {
+	import protheus_rest
+}
+
+:8080 {
+	import protheus_rest
 }

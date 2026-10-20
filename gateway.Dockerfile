@@ -23,4 +23,4 @@ FROM caddy:2-alpine
 
 COPY resources/Caddyfile /etc/caddy/Caddyfile
 
-EXPOSE 8080
+EXPOSE 80 8080
