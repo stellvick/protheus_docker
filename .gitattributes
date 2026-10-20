@@ -1,5 +1,10 @@
-resources/hlpspa.txt filter=lfs diff=lfs merge=lfs -text
-resources/hlpeng.txt filter=lfs diff=lfs merge=lfs -text
-resources/hlppor.txt filter=lfs diff=lfs merge=lfs -text
-resources/TTTM120.RPO filter=lfs diff=lfs merge=lfs -text
-resources/sxsbra.txt filter=lfs diff=lfs merge=lfs -text
+# Sem Git LFS.
+#
+# A versão anterior deste repositório marcava estes caminhos como LFS:
+#     resources/TTTM120.RPO  filter=lfs
+#     resources/sxsbra.txt   filter=lfs
+#     resources/hlp*.txt     filter=lfs
+#
+# O resultado foram ponteiros de 134 bytes versionados no lugar dos arquivos —
+# um RPO de verdade tem 606 MB. Nenhum arquivo licenciado é versionado agora:
+# eles vivem em /srv/protheus, no host, e chegam lá por host/01-fetch-artifacts.sh.

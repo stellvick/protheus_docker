@@ -1,1 +1,27 @@
+# Sem Git LFS. Os artefatos licenciados (~1,2 GB) NÃO entram no repositório:
+# o GitHub recusa arquivos acima de 100 MB, e o LFS gratuito dá 1 GB de
+# armazenamento — o payload não cabe de qualquer forma.
+#
+# Os arquivos vivem em /srv/protheus, no host, montados por bind mount.
+# Use host/01-fetch-artifacts.sh para baixá-los do Google Drive.
+#
+# (A versão anterior deste repositório marcava TTTM120.RPO, sxsbra.txt e
+# hlp*.txt como LFS. Os objetos ficaram como ponteiros de 134 bytes, o que
+# tornava o build inútil: um RPO de verdade tem 606 MB.)
+
+# Artefatos licenciados — nunca versionar
+resources/*.rpo
+resources/*.RPO
+resources/*.unq
+resources/*.txt
+resources/*.xnu
+artifacts/
+
+# Configuração gerada em runtime — contém o specialkey
+appserver.ini
+dbaccess.ini
+
+# Estado local
+.env
 .vscode/settings.json
+*.log

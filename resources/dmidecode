@@ -1,4 +1,17 @@
 #!/bin/sh
+# =============================================================================
+# dmidecode falso — fixa a identidade de hardware vista pelo License Server
+# =============================================================================
+# A licença do Protheus se vincula a identificadores de hardware (UUID e serial
+# de sistema). Num container esses valores vêm do host e mudam de máquina para
+# máquina — a licença deixa de reconhecer o ambiente.
+#
+# Este script substitui o binário real nas quatro imagens e devolve sempre os
+# mesmos valores. Origem: solução já validada no stellvick/protheus_docker.
+#
+# O binário real fica em /usr/sbin/dmidecode; aqui ele é sobrescrito, e um
+# symlink em /usr/bin garante que qualquer caminho de chamada caia neste.
+# =============================================================================
 case "$*" in
   *system-uuid*)
     echo "12345678-abcd-1234-abcd-123456789abc"
@@ -13,13 +26,13 @@ case "$*" in
     echo ""
     echo "Handle 0x0001, DMI type 1, 27 bytes"
     echo "System Information"
-    echo "	Manufacturer: TOTVS DEV"
-    echo "	Product Name: TOTVS Protheus Virtual Server"
-    echo "	Version: 1.0"
-    echo "	Serial Number: 1234-5678-9012"
-    echo "	UUID: 12345678-abcd-1234-abcd-123456789abc"
-    echo "	Wake-up Type: Power Switch"
-    echo "	SKU Number: Not Specified"
-    echo "	Family: Not Specified"
+    echo "\tManufacturer: TOTVS DEV"
+    echo "\tProduct Name: TOTVS Protheus Virtual Server"
+    echo "\tVersion: 1.0"
+    echo "\tSerial Number: 1234-5678-9012"
+    echo "\tUUID: 12345678-abcd-1234-abcd-123456789abc"
+    echo "\tWake-up Type: Power Switch"
+    echo "\tSKU Number: Not Specified"
+    echo "\tFamily: Not Specified"
     ;;
 esac

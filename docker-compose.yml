@@ -1,108 +1,279 @@
+# =============================================================================
+# Protheus 12.1.2510 — ambiente de desenvolvimento (Coolify, Docker Compose)
+# =============================================================================
+# Recurso: Git Application, build pack Docker Compose, apontando para este
+# repositório. As quatro imagens são CONSTRUÍDAS a partir das oficiais da TOTVS
+# apenas para instalar o dmidecode falso (ver resources/dmidecode) — o resto do
+# conteúdo das imagens é o do fabricante, sem alteração.
+#
+# NÃO homologado para produção — ver docs do fabricante.
+#
+# Topologia (nomes dos serviços SÃO os hostnames internos):
+#     appserver -> dbaccess-postgres:7890 -> postgres-iniciado:5432
+#     appserver -> license:5555
+#
+# Ordem de subida, declarativa:
+#     license + postgres-iniciado -> initdb -> seed-config
+#       -> dbaccess-postgres, appserver
+#
+# Armazenamento: os artefatos licenciados (~1,2 GB) NÃO estão no repositório.
+# Vivem em /srv/protheus, no host, montados por bind absoluto. Baixe-os com
+# host/01-fetch-artifacts.sh.
+#
+# ATENÇÃO — cifrão dobrado: o Compose interpola $VAR e ${VAR} NESTE arquivo,
+# inclusive dentro dos scripts. Onde o cifrão deve chegar ao shell do container,
+# ele vai dobrado ($${VAR}). Não "simplifique" isso.
+# =============================================================================
+
 services:
+
   license:
     build:
       context: .
       dockerfile: license.Dockerfile
+    image: protheus-license:3.7.0
     restart: unless-stopped
-    networks:
-      - protheus-net
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-        reservations:
-          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 /bin/sh -c '</dev/tcp/127.0.0.1/5555'"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
 
   postgres-iniciado:
     build:
       context: .
       dockerfile: postgres.Dockerfile
+    image: protheus-postgres:12.1.2510_bra
     restart: unless-stopped
-    environment:
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=protheus
     volumes:
-      - postgres-data:/var/lib/postgresql/data
-    networks:
-      - protheus-net
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-        reservations:
-          memory: 512M
+      - protheus_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  initdb:
+    # One-shot. O cluster já vem inicializado na imagem, com o banco `protheus`
+    # criado em WIN1252 — então na prática este serviço CONFERE e não cria nada.
+    # Ele existe para o caso de a imagem um dia não trazer o banco: aí cria, no
+    # encoding certo. Idempotente por construção.
+    image: protheus-postgres:12.1.2510_bra
+    restart: "no"
+    exclude_from_hc: true
+    depends_on:
+      postgres-iniciado:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres-iniciado
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    entrypoint: ["/bin/bash", "-lc"]
+    command:
+      - |
+        set -euo pipefail
+        echo "==> [initdb] conferindo o banco 'protheus'"
+        psql -tAc "SELECT 1 FROM pg_database WHERE datname='protheus'" > /tmp/db.txt
+        if grep -qx 1 /tmp/db.txt; then
+          echo "    banco 'protheus' ja existe — conferindo o encoding"
+        else
+          echo "    banco 'protheus' ausente — criando em WIN1252"
+          psql -v ON_ERROR_STOP=1 -c "CREATE DATABASE protheus ENCODING 'WIN1252' TEMPLATE template0 LC_CTYPE 'C' LC_COLLATE 'C'"
+        fi
+        psql -d protheus -tAc "SELECT 'banco=' || current_database() || ' encoding=' || pg_encoding_to_char(encoding) FROM pg_database WHERE datname = current_database()"
+
+  seed-config:
+    # One-shot. Gera os dois INI que o Protheus lê do disco, na pasta do host.
+    # Roda na imagem do DbAccess porque é ela que traz o dbaccesscfg.
+    #
+    # A configuração é gerada em RUNTIME, e não copiada para a imagem, por um
+    # motivo: o `specialkey` é segredo (a porta 1234 fica publicada) e não pode
+    # virar constante versionada.
+    image: protheus-dbaccess:24.1.1.0
+    restart: "no"
+    exclude_from_hc: true
+    depends_on:
+      initdb:
+        condition: service_completed_successfully
+    environment:
+      PROTHEUS_SPECIALKEY: ${PROTHEUS_SPECIALKEY}
+    volumes:
+      - /srv/protheus:/seed
+    entrypoint: ["/bin/bash", "-lc"]
+    command:
+      - |
+        set -euo pipefail
+        : "$${PROTHEUS_SPECIALKEY:?defina a variavel PROTHEUS_SPECIALKEY nas variaveis do recurso}"
+        cd /seed
+
+        if [ -s appserver.ini ]; then
+          echo "==> [seed-config] appserver.ini ja existe — preservado"
+        else
+          echo "==> [seed-config] escrevendo appserver.ini"
+          cat > appserver.ini <<'INI'
+        [environment]
+        rpodb=top
+        rpoversion=120
+        rpolanguage=multi
+        sourcepath=/opt/totvs/protheus/apo
+        rootpath=/opt/totvs/protheus/protheus_data
+        RPOCustom=/opt/totvs/protheus/apo/custom.rpo
+        startpath=/system
+        dbdatabase=POSTGRES
+        dbalias=protheus
+        dbserver=dbaccess-postgres
+        dbport=7890
+        topmemomega=10
+        app_environment=environment
+        INI
+          printf 'specialkey=%s\n' "$${PROTHEUS_SPECIALKEY}" >> appserver.ini
+          cat >> appserver.ini <<'INI'
+
+        [general]
+        buildkillusers=1
+        consolelog=1
+        consolefile=/opt/totvs/appserver/console.log
+        maxstringsize=10
+
+        [drivers]
+        active=tcp
+        MultiProtocolPort=1
+        MultiProtocolPortSecure=1
+
+        [tcp]
+        type=tcpip
+        port=1234
+
+        [webapp]
+        enable=1
+        EnvServer=environment
+        port=8080
+
+        [lockserver]
+        enable=0
+        server=NOCONFIG
+        port=1234
+
+        [licenseclient]
+        server=license
+        port=5555
+
+        [webapp/webapp]
+        mpp=
+
+        [HTTPV11]
+        ENABLE=1
+        SOCKETS=HTTPREST
+
+        [ONSTART]
+        JOBS=HTTPJOB
+        REFRESHRATE=30
+
+        [HTTPURI]
+        URL=/REST
+        INSTANCES=1,2
+        PREPAREIN=ALL
+
+        [HTTPREST]
+        SECURITY=1
+        PORT=8081
+        URIS=HTTPURI
+
+        [HTTPJOB]
+        MAIN=HTTP_START
+        ENVIRONMENT=environment
+        INI
+          chmod 0640 appserver.ini
+        fi
+
+        if [ -s language.ini ]; then
+          echo "==> [seed-config] language.ini ja existe — preservado"
+        else
+          printf '[languageenvironment]\ncurrentlanguage=pt-br\n' > language.ini
+          chmod 0640 language.ini
+        fi
+
+        echo "==> [seed-config] gerando dbaccess.ini"
+        /opt/totvs/dbaccess/tools/dbaccesscfg \
+          -u postgres \
+          -p postgres \
+          -a protheus \
+          -d postgres \
+          -c '/usr/lib64/libodbc.so' \
+          -o 'ConnectionMode=2;ConnectionString=DRIVER!{PostgreSQL}@SERVERNAME!postgres-iniciado@PORT!5432@DATABASE!protheus@USERNAME!postgres@PASSWORD!postgres' \
+          -g 'LicenseServer=license;LicensePort=5555'
+        sed -e 's/!/=/g' -e 's/@/;/g' dbaccess.ini > dbaccess2.ini
+        mv -f dbaccess2.ini dbaccess.ini
+        chmod 0640 dbaccess.ini
+        echo "==> [seed-config] pronto"
 
   dbaccess-postgres:
-    build:
-      context: .
-      dockerfile: dbaccess.Dockerfile
+    # Ponte ODBC entre o AppServer e o PostgreSQL.
+    # O command copia o INI gerado pelo seed-config e entrega o processo ao
+    # binário do DbAccess (DBACCESS_HOME=/opt/totvs/dbaccess/multi).
+    image: protheus-dbaccess:24.1.1.0
     restart: unless-stopped
     depends_on:
-      - postgres-iniciado
-      - license
-    networks:
-      - protheus-net
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-        reservations:
-          memory: 512M
+      seed-config:
+        condition: service_completed_successfully
+    environment:
+      TZ: ${TZ:-America/Sao_Paulo}
+    volumes:
+      - /srv/protheus:/seed:ro
+    command:
+      - /bin/bash
+      - -lc
+      - |
+        set -e
+        cp -f /seed/dbaccess.ini /opt/totvs/dbaccess/multi/dbaccess.ini
+        cd /opt/totvs/dbaccess/multi
+        exec ./dbaccess64
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 /bin/sh -c '</dev/tcp/127.0.0.1/7890'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
   appserver:
-    build:
-      context: .
-      dockerfile: appserver.Dockerfile
+    image: protheus-appserver:24.3.1.1
     restart: unless-stopped
     depends_on:
-      - dbaccess-postgres
-      - license
-    ports:
-      - "1234:1234"
-      - "8080:8080"
-      - "8081:8081"
-    networks:
-      - protheus-net
-    deploy:
-      resources:
-        limits:
-          memory: 4G
-        reservations:
-          memory: 2G
-    ulimits:
-      nofile:
-        soft: 65535
-        hard: 65535
-
-  firefox:
-    image: jlesage/firefox
-    restart: unless-stopped
-    ports:
-      - "5800:5800"
+      license:
+        condition: service_healthy
+      dbaccess-postgres:
+        condition: service_healthy
     environment:
-      - DARK_MODE=1
-      - WEB_AUDIO=1
-      - SECURE_CONNECTION_VNC_METHOD=1
-      - VNC_PASSWORD=123456
+      TZ: ${TZ:-America/Sao_Paulo}
     volumes:
-      - 'firefox_config:/config'
-    networks:
-      - protheus-net
+      - /srv/protheus:/seed:ro
+      # apo/ fica gravável: a compilação AdvPL escreve o RPO.
+      - /srv/protheus/apo:/opt/totvs/protheus/apo
+      - /srv/protheus/systemload:/opt/totvs/protheus/protheus_data/systemload:ro
+      - /srv/protheus/system:/opt/totvs/protheus/protheus_data/system:ro
+    ports:
+      # EXCEÇÃO JUSTIFICADA à regra de não publicar portas: o TDS do VS Code e
+      # o SmartClient falam o protocolo binário do AppServer nesta porta, que
+      # não passa pelo proxy HTTP do Coolify.
+      - "1234:1234"
+    command:
+      - /bin/bash
+      - -lc
+      - |
+        set -e
+        cp -f /seed/appserver.ini /opt/totvs/appserver/appserver.ini
+        cp -f /seed/language.ini  /opt/totvs/appserver/language.ini
+        chmod 666 /opt/totvs/appserver/language.ini
+        cd /opt/totvs/appserver
+        exec ./appsrvlinux
     healthcheck:
-      test:
-        - CMD
-        - wget
-        - '-q'
-        - '--spider'
-        - 'http://127.0.0.1:5800/'
-      interval: 5s
-      timeout: 20s
-      retries: 10
+      test: ["CMD-SHELL", "timeout 2 /bin/sh -c '</dev/tcp/127.0.0.1/1234'"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 90s
 
 volumes:
-  postgres-data:
-  firefox_config:
-
-networks:
-  protheus-net:
-    driver: bridge
+  protheus_pgdata:
