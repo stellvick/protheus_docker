@@ -58,8 +58,25 @@ app_environment=environment
 
 [drivers]
 active=tcp
+; Porta Multiprotocolo: obrigatoria a partir da release 12.1.2510 (TDN DFRM1-37254).
 MultiProtocolPort=1
-MultiProtocolPortSecure=1
+; Comunicacao segura DESLIGADA — e isso e deliberado, nao um esquecimento.
+;
+; Com MultiProtocolPortSecure=1 o AppServer apresenta, na porta 1234, o
+; certificado padrao que acompanha o produto: valido SOMENTE para localhost
+; (SAN: DNS:localhost, IP:127.0.0.1). Verificado por sondagem TLS — a 1234
+; responde com CN="TOTVS certificate CA - localhost".
+;
+; Acessando o WebApp por um nome real, o navegador recusa o certificado, a
+; sessao nao abre e o WebApp reporta "server unknown status" ao selecionar o
+; programa. O TDN descreve exatamente este cenario.
+;
+; Para religar a comunicacao segura e preciso um certificado que contemple o
+; nome usado (TDN: "Porta Multiprotocolo - Geracao de Certificado") e apontar
+; [MPP] SSL_Certificate / SSL_Key para ele. Enquanto isso, o trafego da MPP
+; vai em claro — aceitavel num ambiente de desenvolvimento, que nao e
+; homologado para producao de qualquer forma.
+MultiProtocolPortSecure=0
 
 [tcp]
 type=tcpip

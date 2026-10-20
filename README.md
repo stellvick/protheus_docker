@@ -212,6 +212,36 @@ Todos lidos **de dentro das imagens**, não da documentação:
 
 ---
 
+## Porta Multiprotocolo (MPP) — e o certificado de localhost
+
+A porta **1234** não é só o canal do TDS: é a **Porta Multiprotocolo**, a porta
+unificada que atende SmartClient, TWebEngine, REST Server e **o próprio WebApp**.
+
+Com `MultiProtocolPortSecure=1` o AppServer apresenta nela o certificado padrão
+que acompanha o produto — **válido somente para `localhost`**:
+
+```
+subject : CN=TOTVS certificate CA - localhost
+SAN     : DNS:localhost, IP Address:127.0.0.1
+```
+
+Acessando o WebApp por um nome real, o navegador recusa esse certificado, a
+sessão não abre, e o WebApp reporta **`server unknown status`** ao selecionar o
+programa. O TDN descreve exatamente este cenário e manda gerar um certificado
+que contemple os endereços usados.
+
+**Decisão:** `MultiProtocolPortSecure=0`. O WebApp passa a funcionar por
+qualquer nome. O custo é o tráfego da MPP em claro — aceitável num ambiente que
+não é homologado para produção, e honestamente registrado aqui.
+
+**Para religar com segurança:** gere um certificado cobrindo
+`protheus.stellvick.fun` (e o IP, se for acessar por IP) e aponte
+`[MPP] SSL_Certificate` e `[MPP] SSL_Key` para ele. O certificado Let's Encrypt
+que o Coolify já emite para este domínio serviria — mas exige levá-lo até o
+container, e um restart a cada renovação.
+
+---
+
 ## Conformidade com a release 12.1.2510
 
 A release note oficial **DFRM1-37254** (TDN, *Obrigatoriedade da Porta
