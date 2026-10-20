@@ -19,17 +19,19 @@
 	handle {
 		reverse_proxy appserver:8081 {
 			# Repassa o Host como o upstream se chama, em vez do nome publico.
-			# O acesso direto a appserver:8081 responde 428 normalmente, e a
-			# unica diferenca em relacao ao caminho via proxy era o cabecalho
-			# Host — que aqui chegava como o dominio publico.
+			# O acesso direto a appserver:8081 responde 428 normalmente, e o
+			# caminho via proxy era a unica diferenca — aqui o Host chegava
+			# como o dominio publico.
 			header_up Host {upstream_hostport}
-		}
-	}
 
-	# Diagnostico: em vez de um 502 mudo, devolve o motivo real da falha.
-	# Temporario — sai assim que a rota estiver de pe.
-	handle_errors {
-		respond "DIAG status={http.error.status_code} msg={http.error.message}" 502
+			# O listener REST do AppServer sobe como job assincrono
+			# ([ONSTART] JOBS=HTTPJOB, REFRESHRATE=30). Nos primeiros segundos
+			# apos um deploy o container existe mas a 8081 ainda nao escuta:
+			# sem isto o Caddy devolve 502 na hora, e foi exatamente isso que
+			# produziu o 502 que investigamos. Com isto ele insiste por ate 20s.
+			lb_try_duration 20s
+			lb_try_interval 500ms
+		}
 	}
 }
 

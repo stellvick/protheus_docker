@@ -212,6 +212,43 @@ Todos lidos **de dentro das imagens**, não da documentação:
 
 ---
 
+## O serviço `gateway` — REST com TLS em domínio próprio
+
+O WebApp (8080) e o REST (8081) moram **no mesmo container**. O Coolify roteia
+domínio por *serviço* do compose e **descarta a porta** escrita no valor do
+domínio — um PATCH com `https://x.fun:8080,https://y.fun:8081` é gravado **sem
+porta nenhuma**, e ele usa o `ports_exposes` do recurso para todos os domínios.
+Não há como o proxy alcançar uma porta sem a outra.
+
+Por isso o REST ganhou um serviço próprio: o `gateway`, um Caddy que escuta na
+**8080** (e na **80**, porque para um serviço que não publica porta o Coolify
+pode cair no padrão 80) e entrega tudo a `appserver:8081`.
+
+```
+https://protheus.stellvick.fun      -> appserver:8080   (WebApp)
+https://protheus-api.stellvick.fun  -> gateway:80/8080  -> appserver:8081 (REST)
+```
+
+Quatro armadilhas, todas provadas na prática:
+
+1. **Domínio de serviço que ainda não existe é descartado em silêncio.** O PATCH
+   devolve `200` e o serviço simplesmente some do JSON. Registre o domínio
+   *depois* do primeiro deploy.
+2. **Mudança de domínio não regenera a config do proxy.** Sem um deploy, os dois
+   domínios respondem 502.
+3. **502 mudo não se diagnostica no escuro.** `handle_errors` com
+   `{http.error.message}` revelou o motivo real: `dial tcp 10.0.4.6:8081:
+   connect: connection refused`.
+4. **O listener REST sobe como job assíncrono** (`[ONSTART] JOBS=HTTPJOB`). Nos
+   primeiros segundos após um deploy a 8081 ainda não escuta — daí o
+   `lb_try_duration 20s`, que faz o Caddy insistir em vez de devolver 502.
+
+O healthcheck do gateway bate em `/healthz`, servido pelo próprio Caddy.
+Apontá-lo para o REST reprovaria um serviço saudável: o Protheus responde
+**428** a tudo que não traz credencial.
+
+---
+
 ## Porta Multiprotocolo (MPP) — e o certificado de localhost
 
 A porta **1234** não é só o canal do TDS: é a **Porta Multiprotocolo**, a porta
