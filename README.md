@@ -20,6 +20,7 @@ mesma razão que ela existe — mas tira os artefatos do Git.
 | `dmidecode` falso (licença) | sim | **sim, mantido** |
 | Artefatos licenciados | no Git, via LFS | **fora do Git**, no host |
 | RPO / dicionário | ponteiros LFS | arquivos reais, baixados do Drive |
+| Download dos artefatos | manual | **automático no boot**, idempotente |
 | `appserver.ini` | copiado para a imagem | gerado em runtime |
 | `specialkey` | `exemplo`, versionado | variável do Coolify |
 | Criação de banco | implícita (`POSTGRES_DB`, inerte) | conferida no start |
@@ -41,7 +42,8 @@ validada aqui e é a peça que faz a licença funcionar.
 
 ## O que vem de onde
 
-Tudo o que o Drive tem, o Drive fornece. Nada é copiado à mão.
+Tudo o que o Drive tem, o Drive fornece — e **automaticamente**: o serviço
+`fetch-artifacts` baixa e renomeia no primeiro boot. Nada é copiado à mão.
 
 | Arquivo | Origem | Vai para |
 |---|---|---|
@@ -76,13 +78,23 @@ No container: `sourcepath` → `/opt/totvs/protheus/apo`, e `startpath=/system` 
 
 ## Deploy
 
-### 1. Baixar os artefatos no host
+### 1. O download dos artefatos é automático
+
+Não há passo manual. O serviço `fetch-artifacts` baixa os ~1,2 GB do Drive no
+primeiro boot e grava já com os nomes que o Protheus espera — o Drive entrega
+nomes longos em maiúsculas, o container quer caminhos fixos.
+
+É **idempotente**: cada arquivo é conferido por tamanho antes de baixar. O
+download acontece uma vez; os boots seguintes levam décimos de segundo.
+
+Testado de verdade: a primeira execução baixou os cinco conjuntos e conferiu
+todos; a segunda levou **0,108 s** sem baixar nada.
+
+Para rodar à mão (Drive fora do ar, ou antes do deploy):
 
 ```bash
-DATA_DIR=/srv/protheus bash host/01-fetch-artifacts.sh
+DATA_DIR=/srv/protheus bash resources/fetch-artifacts.sh
 ```
-
-Baixa os ~1,2 GB direto do Drive e organiza. Testado: ~40 s, e confere no fim.
 
 ### 2. Criar o recurso no Coolify
 
@@ -95,6 +107,7 @@ Baixa os ~1,2 GB direto do Drive e organiza. Testado: ~40 s, e confere no fim.
    |---|---|
    | `PROTHEUS_SPECIALKEY` | `openssl rand -hex 16` |
    | `TZ` | `America/Sao_Paulo` (opcional) |
+   | `FETCH_ARTIFACTS` | `1` (padrão) — `0` desliga o download |
 
 4. **Domains for `appserver`** (o campo aceita várias linhas):
 
@@ -110,12 +123,14 @@ Baixa os ~1,2 GB direto do Drive e organiza. Testado: ~40 s, e confere no fim.
 A ordem de subida é resolvida pelo compose:
 
 ```
-license + postgres-iniciado  →  initdb (confere o banco)
+license + postgres-iniciado
+    →  fetch-artifacts (baixa os artefatos do Drive, ~1,2 GB, uma vez)
+    →  initdb (confere o banco WIN1252)
     →  seed-config (escreve appserver.ini, language.ini e dbaccess.ini)
-        →  dbaccess-postgres + appserver
+    →  dbaccess-postgres + appserver
 ```
 
-`initdb` e `seed-config` saem com código 0 e ficam parados — é o esperado. Por
+`fetch-artifacts`, `initdb` e `seed-config` saem com código 0 e ficam parados — é o esperado. Por
 isso carregam `exclude_from_hc: true`: sem isso o Coolify poderia marcar o
 recurso inteiro como doente por causa de dois containers que terminaram bem.
 
@@ -142,6 +157,7 @@ servidor, **port** = `1234`.
 |---|---|---|
 | `license` | `totvsengpro/license-dev:3.7.0` | interna, 5555 |
 | `postgres-iniciado` | `totvsengpro/postgres-dev:12.1.2510_bra` | interna, 5432 |
+| `fetch-artifacts` | one-shot (`alpine` + curl) | — |
 | `initdb` | one-shot | — |
 | `seed-config` | one-shot | — |
 | `dbaccess-postgres` | `totvsengpro/dbaccess-postgres-dev:24.1.1.0` | interna, 7890 |
@@ -204,19 +220,47 @@ deploy do Coolify, onde aparecem as saídas de `initdb` e `seed-config`.
 
 ## Limites conhecidos
 
-1. **Substituição de variáveis em duas camadas.** O Coolify substitui antes do
-   `docker compose`, que substitui de novo. Se o `$$` não for preservado, o
-   `specialkey` chega vazio. **Conferir** depois do deploy: `grep specialkey
-   /srv/protheus/appserver.ini`. **Eliminar o risco:** crie o arquivo à mão antes
-   do primeiro deploy — o `seed-config` o preserva.
-2. **Licença.** O `license-dev` tráz um MAC fixo (`00:50:56:AC:C8:2B`) no
+1. **Substituição de variáveis em duas camadas — resolvido na prática.** O
+   Coolify substitui antes do `docker compose`, que substitui de novo. Num script
+   *inline* isso obrigava a dobrar cada cifrão (`$${VAR}`), e uma dobra esquecida
+   gravaria o `specialkey` **vazio**, em silêncio. Os scripts agora vivem em
+   `resources/*.sh`, versionados: o Compose não os interpreta, o bash sim.
+   Ainda vale conferir depois do deploy: `grep specialkey /srv/protheus/appserver.ini`.
+2. **Google Drive no caminho de boot.** O `fetch-artifacts` depende de um link
+   público do Drive no primeiro boot. Depois de baixado, os arquivos ficam na
+   pasta do host e sobrevivem a tudo — mas se o Drive estiver indisponível antes
+   disso, o recurso não sobe. `FETCH_ARTIFACTS=0` desliga o download e usa só o
+   que estiver em disco. Links públicos sofrem limitação de banda do Google, e é
+   exatamente por isso que a conferência por tamanho existe: baixar 1,2 GB a cada
+   boot seria pedir para ser bloqueado.
+3. **Licença.** O `license-dev` tráz um MAC fixo (`00:50:56:AC:C8:2B`) no
    `licenseserver.ini`. O `dmidecode` falso cobre UUID e serial; se a licença
    ainda recusar, o MAC é o próximo lugar a olhar.
-3. **Versões.** AppServer `24.3.1.1` com License `3.7.0` é o par que a TOTVS
+4. **Versões.** AppServer `24.3.1.1` com License `3.7.0` é o par que a TOTVS
    publica junto, de outubro/2025. Não usamos os tarballs licenciados do Drive
    (`appserver 24.3.1.5`, `license 3.7.1`) porque o `TOTVSLICENSE` é um
    **instalador Java** para `/totvs/totvslicensevirtual`: exigiria JDK no build e
    um layout impossível de verificar sem executá-lo.
-4. **Porta 1234 exposta.** O AppServer exige autenticação própria, mas a porta
+5. **Porta 1234 exposta.** O AppServer exige autenticação própria, mas a porta
    exposta é a porta exposta. Restrinja por firewall se puder.
-5. **Não homologado para produção.**
+6. **Não homologado para produção.**
+
+---
+
+## Arquivos
+
+```
+docker-compose.yml          recursos, ordem de subida, domínios
+fetcher.Dockerfile          imagem mínima (alpine + curl + unzip) do download
+appserver.Dockerfile        ┐
+dbaccess.Dockerfile         │ derivadas das oficiais, para o dmidecode falso
+license.Dockerfile         │
+postgres.Dockerfile         ┘
+resources/dmidecode         mock que estabiliza a identidade de hardware
+resources/fetch-artifacts.sh  baixa e renomeia os artefatos do Drive
+resources/seed-config.sh    gera appserver.ini, language.ini e dbaccess.ini
+.env.example               as três variáveis
+host/99-verify.sh          verificação pós-deploy (roda no host, inspeciona containers)
+```
+
+Nenhum artefato licenciado é versionado. `resources/` contém apenas texto.

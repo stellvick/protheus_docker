@@ -12,4 +12,7 @@ USER root
 COPY resources/dmidecode /usr/sbin/dmidecode
 RUN chmod +x /usr/sbin/dmidecode && ln -sf /usr/sbin/dmidecode /usr/bin/dmidecode
 
+COPY resources/seed-config.sh /usr/local/bin/seed-config.sh
+RUN chmod +x /usr/local/bin/seed-config.sh
+
 EXPOSE 7890

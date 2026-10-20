@@ -2,9 +2,9 @@
 # Protheus 12.1.2510 — ambiente de desenvolvimento (Coolify, Docker Compose)
 # =============================================================================
 # Recurso: Git Application, build pack Docker Compose, apontando para este
-# repositório. As quatro imagens são CONSTRUÍDAS a partir das oficiais da TOTVS
-# apenas para instalar o dmidecode falso (ver resources/dmidecode) — o resto do
-# conteúdo das imagens é o do fabricante, sem alteração.
+# repositório. As imagens são CONSTRUÍDAS a partir das oficiais da TOTVS apenas
+# para instalar o dmidecode falso (ver resources/dmidecode) — o resto do
+# conteúdo é o do fabricante, sem alteração.
 #
 # NÃO homologado para produção — ver docs do fabricante.
 #
@@ -13,16 +13,22 @@
 #     appserver -> license:5555
 #
 # Ordem de subida, declarativa:
-#     license + postgres-iniciado -> initdb -> seed-config
+#     license + postgres-iniciado
+#       -> fetch-artifacts   (baixa os artefatos licenciados do Drive)
+#       -> initdb            (confere o banco WIN1252)
+#       -> seed-config       (escreve appserver.ini, language.ini, dbaccess.ini)
 #       -> dbaccess-postgres, appserver
 #
-# Armazenamento: os artefatos licenciados (~1,2 GB) NÃO estão no repositório.
-# Vivem em /srv/protheus, no host, montados por bind absoluto. Baixe-os com
-# host/01-fetch-artifacts.sh.
+# Armazenamento: os artefatos licenciados (~1,2 GB) NÃO estão no repositório —
+# o GitHub recusa acima de 100 MB por arquivo e o LFS gratuito dá 1 GB. Vivem
+# em /srv/protheus, no host, montados por bind absoluto, e chegam lá pelo
+# serviço fetch-artifacts (ou à mão, com o mesmo script).
 #
-# ATENÇÃO — cifrão dobrado: o Compose interpola $VAR e ${VAR} NESTE arquivo,
-# inclusive dentro dos scripts. Onde o cifrão deve chegar ao shell do container,
-# ele vai dobrado ($${VAR}). Não "simplifique" isso.
+# Os scripts ficam em resources/*.sh, versionados, e NÃO inline nos `command:`.
+# O Compose interpola $VAR e ${VAR} no arquivo inteiro, inclusive dentro de
+# scripts; num script inline cada variável de shell precisaria de cifrão dobrado
+# ($${VAR}), e uma dobra esquecida grava valor VAZIO em silêncio. Como arquivo,
+# o bash é bash e nada mais.
 # =============================================================================
 
 services:
@@ -55,6 +61,29 @@ services:
       retries: 12
       start_period: 30s
 
+  fetch-artifacts:
+    # One-shot. Baixa do Google Drive os artefatos licenciados que o repositório
+    # não pode carregar, e grava já com os nomes que o Protheus espera.
+    #
+    # IDEMPOTENTE: cada arquivo é conferido por tamanho antes de baixar. O
+    # download de ~1,2 GB acontece UMA vez — depois, todo boot é instantâneo.
+    # A pasta é bind mount do host, então os arquivos sobrevivem a qualquer
+    # recriação de container ou volume.
+    #
+    # FETCH_ARTIFACTS=0 desliga o download por completo (útil se o Drive ficar
+    # indisponível e você já tiver os arquivos em disco).
+    build:
+      context: .
+      dockerfile: fetcher.Dockerfile
+    image: protheus-fetcher:1
+    restart: "no"
+    exclude_from_hc: true
+    environment:
+      DATA_DIR: /seed
+      FETCH_ARTIFACTS: ${FETCH_ARTIFACTS:-1}
+    volumes:
+      - /srv/protheus:/seed
+
   initdb:
     # One-shot. O cluster já vem inicializado na imagem, com o banco `protheus`
     # criado em WIN1252 — então na prática este serviço CONFERE e não cria nada.
@@ -85,129 +114,24 @@ services:
         psql -d protheus -tAc "SELECT 'banco=' || current_database() || ' encoding=' || pg_encoding_to_char(encoding) FROM pg_database WHERE datname = current_database()"
 
   seed-config:
-    # One-shot. Gera os dois INI que o Protheus lê do disco, na pasta do host.
-    # Roda na imagem do DbAccess porque é ela que traz o dbaccesscfg.
+    # One-shot. Gera os três arquivos de configuração que o Protheus lê do
+    # disco. Roda na imagem do DbAccess porque é ela que traz o dbaccesscfg.
     #
-    # A configuração é gerada em RUNTIME, e não copiada para a imagem, por um
-    # motivo: o `specialkey` é segredo (a porta 1234 fica publicada) e não pode
-    # virar constante versionada.
+    # O script vive em resources/seed-config.sh, versionado e legível — e por
+    # isso o `specialkey` entra por variável sem nenhuma ginástica de cifrão.
     image: protheus-dbaccess:24.1.1.0
     restart: "no"
     exclude_from_hc: true
     depends_on:
       initdb:
         condition: service_completed_successfully
+      fetch-artifacts:
+        condition: service_completed_successfully
     environment:
       PROTHEUS_SPECIALKEY: ${PROTHEUS_SPECIALKEY}
     volumes:
       - /srv/protheus:/seed
-    entrypoint: ["/bin/bash", "-lc"]
-    command:
-      - |
-        set -euo pipefail
-        : "$${PROTHEUS_SPECIALKEY:?defina a variavel PROTHEUS_SPECIALKEY nas variaveis do recurso}"
-        cd /seed
-
-        if [ -s appserver.ini ]; then
-          echo "==> [seed-config] appserver.ini ja existe — preservado"
-        else
-          echo "==> [seed-config] escrevendo appserver.ini"
-          cat > appserver.ini <<'INI'
-        [environment]
-        rpodb=top
-        rpoversion=120
-        rpolanguage=multi
-        sourcepath=/opt/totvs/protheus/apo
-        rootpath=/opt/totvs/protheus/protheus_data
-        RPOCustom=/opt/totvs/protheus/apo/custom.rpo
-        startpath=/system
-        dbdatabase=POSTGRES
-        dbalias=protheus
-        dbserver=dbaccess-postgres
-        dbport=7890
-        topmemomega=10
-        app_environment=environment
-        INI
-          printf 'specialkey=%s\n' "$${PROTHEUS_SPECIALKEY}" >> appserver.ini
-          cat >> appserver.ini <<'INI'
-
-        [general]
-        buildkillusers=1
-        consolelog=1
-        consolefile=/opt/totvs/appserver/console.log
-        maxstringsize=10
-
-        [drivers]
-        active=tcp
-        MultiProtocolPort=1
-        MultiProtocolPortSecure=1
-
-        [tcp]
-        type=tcpip
-        port=1234
-
-        [webapp]
-        enable=1
-        EnvServer=environment
-        port=8080
-
-        [lockserver]
-        enable=0
-        server=NOCONFIG
-        port=1234
-
-        [licenseclient]
-        server=license
-        port=5555
-
-        [webapp/webapp]
-        mpp=
-
-        [HTTPV11]
-        ENABLE=1
-        SOCKETS=HTTPREST
-
-        [ONSTART]
-        JOBS=HTTPJOB
-        REFRESHRATE=30
-
-        [HTTPURI]
-        URL=/REST
-        INSTANCES=1,2
-        PREPAREIN=ALL
-
-        [HTTPREST]
-        SECURITY=1
-        PORT=8081
-        URIS=HTTPURI
-
-        [HTTPJOB]
-        MAIN=HTTP_START
-        ENVIRONMENT=environment
-        INI
-          chmod 0640 appserver.ini
-        fi
-
-        if [ -s language.ini ]; then
-          echo "==> [seed-config] language.ini ja existe — preservado"
-        else
-          printf '[languageenvironment]\ncurrentlanguage=pt-br\n' > language.ini
-          chmod 0640 language.ini
-        fi
-
-        echo "==> [seed-config] gerando dbaccess.ini"
-        /opt/totvs/dbaccess/tools/dbaccesscfg \
-          -u postgres \
-          -p postgres \
-          -a protheus \
-          -d postgres \
-          -c '/usr/lib64/libodbc.so' \
-          -o 'ConnectionMode=2;ConnectionString=DRIVER!{PostgreSQL}@SERVERNAME!postgres-iniciado@PORT!5432@DATABASE!protheus@USERNAME!postgres@PASSWORD!postgres' \
-          -g 'LicenseServer=license;LicensePort=5555'
-        sed -e 's/!/=/g' -e 's/@/;/g' dbaccess.ini > dbaccess2.ini
-        mv -f dbaccess2.ini dbaccess.ini
-        chmod 0640 dbaccess.ini
-        echo "==> [seed-config] pronto"
+    entrypoint: ["/usr/local/bin/seed-config.sh"]
 
   dbaccess-postgres:
     # Ponte ODBC entre o AppServer e o PostgreSQL.
@@ -238,6 +162,9 @@ services:
       start_period: 30s
 
   appserver:
+    build:
+      context: .
+      dockerfile: appserver.Dockerfile
     image: protheus-appserver:24.3.1.1
     restart: unless-stopped
     depends_on:
@@ -245,6 +172,8 @@ services:
         condition: service_healthy
       dbaccess-postgres:
         condition: service_healthy
+      fetch-artifacts:
+        condition: service_completed_successfully
     environment:
       TZ: ${TZ:-America/Sao_Paulo}
     volumes:
