@@ -109,15 +109,22 @@ DATA_DIR=/srv/protheus bash resources/fetch-artifacts.sh
    | `TZ` | `America/Sao_Paulo` (opcional) |
    | `FETCH_ARTIFACTS` | `1` (padrão) — `0` desliga o download |
 
-4. **Domains for `appserver`** (o campo aceita várias linhas):
+4. **Domains for `appserver`** — uma linha só:
 
+   ```
+   https://protheus.stellvick.fun:8080
+   ```
+
+   O número é a porta **dentro do container**. O domínio serve o **WebApp**.
+
+   O **REST não fica no domínio**: fica na porta 8081 publicada no host, em
+   HTTP puro (ver "Acesso externo" abaixo). Se preferir o REST com TLS, troque
+   esta linha por duas e use dois nomes — o Coolify não distingue duas portas
+   diferentes no mesmo hostname:
    ```
    https://protheus.stellvick.fun:8080
    https://protheus-api.stellvick.fun:8081
    ```
-
-   O número é a porta **dentro do container**. Duas linhas → dois roteadores:
-   WebApp na 8080, REST na 8081.
 5. **Deploy.**
 
 A ordem de subida é resolvida pelo compose:
@@ -161,7 +168,29 @@ servidor, **port** = `1234`.
 | `initdb` | one-shot | — |
 | `seed-config` | one-shot | — |
 | `dbaccess-postgres` | `totvsengpro/dbaccess-postgres-dev:24.1.1.0` | interna, 7890 |
-| `appserver` | `totvsengpro/appserver-dev:24.3.1.1` | **1234 publicada**, 8080/8081 pelo domínio |
+| `appserver` | `totvsengpro/appserver-dev:24.3.1.1` | **1234, 8080 e 8081 publicadas** + domínio |
+
+---
+
+## Acesso externo
+
+| Endereço | Serve | TLS |
+|---|---|---|
+| `https://protheus.stellvick.fun` | WebApp (container 8080) | **sim**, Let's Encrypt |
+| `<host>:8080` | WebApp (container 8080) | não |
+| `<host>:8081` | REST (`/REST`, container 8081) | não |
+| `<host>:1234` | TDS / SmartClient (protocolo binário) | não |
+
+Sondagem do host em 2026-10-20: **8080 e 8081 livres**; **8000 ocupada** pelo
+painel do Coolify (não usar); 80 e 443 com o proxy; 1234 abre quando o AppServer
+subir. Trocar os números das portas do host é uma linha no compose — a da
+esquerda, antes dos dois-pontos.
+
+**Aviso honesto:** as portas 8080 e 8081 são HTTP **puro**, sem TLS. O REST sobe
+com `[HTTPREST] SECURITY=1`, isto é, autenticação Basic — e Basic sobre HTTP
+viaja em claro, com a senha legível por qualquer um no caminho. O WebApp tem o
+mesmo problema no login. Se o acesso for sair da sua rede, use o domínio com
+certificado ou restrinja as portas por firewall ao seu IP.
 
 ---
 

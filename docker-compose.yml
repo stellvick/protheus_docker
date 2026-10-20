@@ -183,10 +183,15 @@ services:
       - /srv/protheus/systemload:/opt/totvs/protheus/protheus_data/systemload:ro
       - /srv/protheus/system:/opt/totvs/protheus/protheus_data/system:ro
     ports:
-      # EXCEÇÃO JUSTIFICADA à regra de não publicar portas: o TDS do VS Code e
-      # o SmartClient falam o protocolo binário do AppServer nesta porta, que
-      # não passa pelo proxy HTTP do Coolify.
+      # EXCEÇÕES JUSTIFICADAS à regra de não publicar portas.
+      #
+      # 1234 — o TDS do VS Code e o SmartClient falam o protocolo binário do
+      #        AppServer nesta porta, que não passa pelo proxy HTTP do Coolify.
+      # 8080 — WebApp e 8081 — REST: acesso externo direto por porta, além do
+      #        domínio. São HTTP puro, SEM TLS — ver README, "Acesso externo".
       - "1234:1234"
+      - "8080:8080"
+      - "8081:8081"
     command:
       - /bin/bash
       - -lc
